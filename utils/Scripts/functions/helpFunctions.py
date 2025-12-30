@@ -20,18 +20,18 @@ def numero_a_romano(match):
     return mapa.get(match.group(), match.group())
 
 def normalizar_para_comparacion(texto):
-    """
-    Normalización estricta para CLAVES de diccionarios:
-    - Minúsculas, sin acentos.
-    - Convierte número arábigo final a romano (1 -> I).
-    - Elimina espacios (fisica 1 -> fisicai).
-    """
     if not texto: return ""
     
     # 1. Limpieza básica
     texto = str(texto).lower().strip()
+
+    # --- CORRECCIÓN: ELIMINAMOS EL BORRADO AGRESIVO DE PARÉNTESIS ---
+    # Ya no usamos re.sub(r'\(.*?\)', '', texto) porque borraba partes útiles del nombre.
+    # La limpieza de (*) ya se hizo previamente con limpiar_nombre_asignatura
+    # ---------------------------------------------------------------
     
-    # 2. Convertir número final a romano (Ej: "Física 1" -> "fisica I")
+    # 2. Convertir número final a romano
+    # Nota: Validamos que el texto termine en un número aislado
     texto = re.sub(r'\b([1-9]|10)\b$', numero_a_romano, texto, flags=re.IGNORECASE)
     
     # 3. Quitar acentos (NFD)
@@ -195,3 +195,45 @@ def obtener_año_periodo(archivo, nombre_hoja):
 def limpiar_pantalla():
     # Funciona en Windows (cls) y Linux/Mac (clear)
     os.system('cls' if os.name == 'nt' else 'clear')
+    
+def formatDoc(nom, app):
+    """
+    Formatea el nombre y apellido para obtener el primer nombre y primer apellido.
+    """
+    # Convertir a string y quitar espacios extra
+    nombre_raw = str(nom).strip() if nom else ""
+    apellido_raw = str(app).strip() if app else ""
+    
+    # Validación básica
+    if not nombre_raw or not apellido_raw:
+        print(f"⚠️ Docente omitido por datos incompletos: {nom}, {app}")
+        return False
+    
+    # Extraer el primer nombre y el primer apellido
+    try:
+        nom_pila = nombre_raw.split()[0]
+        ape_pila = apellido_raw.split()[0]
+        
+        # Retornar "Nombre Apellido"
+        return f"{nom_pila} {ape_pila}"
+    except IndexError:
+        return False
+
+def limpiar_nombre_asignatura(texto):
+    """
+    Recibe un nombre sucio (ej: 'Matemática I (*)') y devuelve el nombre limpio
+    listo para ser procesado o guardado (ej: 'Matemática I').
+    """
+    if not texto: 
+        return ""
+    
+    texto = str(texto)
+    
+    # 1. Eliminar marcadores al final como (*), (**), (***) usando Regex
+    texto = re.sub(r'\s*\(\*+\)$', '', texto) 
+    
+    # 2. Eliminación literal por seguridad (si aparecen en medio del texto)
+    texto = texto.replace("(*)", "").replace("(**)", "").replace("(***)", "")
+    
+    # 3. Quitar espacios múltiples y extremos
+    return " ".join(texto.split())

@@ -1,10 +1,11 @@
 from mysql.connector import Error
 import mysql.connector
 import os
-from functions.appendDoc import insertDoc
+
+# Imports de funciones
 from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, obtener_año_periodo, limpiar_pantalla 
-from functions.appendAsign import insertAsign
 from functions.appendDoc import insertDoc
+from functions.appendAsign import insertAsign
 from functions.appendMall import insertMalla
 from functions.appendSeccCur import insertSecciones
 
@@ -87,6 +88,7 @@ def menu_principal():
             if not ARCHIVO: continue 
             HOJA = obtener_nombre_hoja(ARCHIVO)
             
+            
             # --- VALIDACIÓN IMPORTANTE ---
             year, per = obtener_año_periodo(ARCHIVO, HOJA)
             
@@ -98,22 +100,18 @@ def menu_principal():
             # -----------------------------
 
             FILA_DE_INICIO = 12
-            # 2=Asignatura, 8=Turno, 9=Seccion, 12=Apellidos, 13=Nombres
-            COLUMNAS_OBJETIVO = [2, 8, 9, 12, 13] 
+            # 2=Asignatura, 12=Apellidos, 13=Nombres
+            COLUMNAS_OBJETIVO = [2, 12, 13] 
             
             intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
 
             insertSecciones(connection, intoData, year, per)
+            
+            
             input("\nPresiona ENTER para continuar...")
             
         elif opcion == '5':
-
-            
-
-            
             input("\nPresiona ENTER para continuar...")
-            
-        
         elif opcion == '0':
             print("¡Hasta luego!")
             break

@@ -1,92 +1,80 @@
-from functions.helpFunctions import numero_a_romano,normalizar_para_comparacion,extraer_numeros_clave,es_parecido
-import re
-
-# ==============================================================================
-# 1. INSERTAR ASIGNATURAS (CON LOGICA ANTI-DUPLICADOS AVANZADA)
-# ==============================================================================
+from functions.helpFunctions import normalizar_para_comparacion, limpiar_nombre_asignatura
 
 def insertAsign(connection, intoData):
-        cursor = connection.cursor()
-
-        # 1. Cargar datos previos
-        cursor.execute("SELECT id, siglas FROM departamentos")
-        mapa_deptos = {sigla: id_dep for (id_dep, sigla) in cursor.fetchall()}
-
-        cursor.execute("SELECT nombre FROM asignaturas")
-        db_filas = cursor.fetchall()
+    cursor = connection.cursor()
+    
+    print(f"🔄 Procesando {len(intoData)} registros de asignaturas...")
+    
+    # Cargamos mapa de departamentos 
+    cursor.execute("SELECT id, siglas FROM departamentos")
+    mapa_deptos = {sigla: id_dep for (id_dep, sigla) in cursor.fetchall()}
+    
+    if not mapa_deptos:
+        print("❌ Error: No hay departamentos cargados.")
+        return
+    
+    asignaturas_tup = []
+    asignaturas_procesadas = set()
+    errores = []
+    
+    for reg in intoData:
+        cod_depto = str(reg[0]).strip() if reg[0] else ""
+        nombre_sucio = str(reg[1]).strip() if reg[1] else ""
         
-        nombres_db_originales = [fila[0] for fila in db_filas]
-        # Creamos el set usando la funcion NORMALIZADA
-        nombres_db_norm = {normalizar_para_comparacion(nom) for nom in nombres_db_originales}
-
-        if not mapa_deptos:
-            print("❌ Error: No hay departamentos.")
-            return
-
-        asignaturas_tup = []
-        contador_omitidos = 0
-
-        print(f"🔄 Procesando {len(intoData)} registros...")
-
-        for fila in intoData:
-            cod_depto = fila[0]
-            nombre_sucio = str(fila[1])
-
-            # --- PASO A: LIMPIEZA DE ENTRADA ---
-            # Quitar (*), (**), etc.
-            nombre_limpio = re.sub(r'\s*\(\*+\)$', '', nombre_sucio) 
-            nombre_limpio = nombre_limpio.replace("(*)", "").replace("(**)", "")
-            nombre_limpio = " ".join(nombre_limpio.split())
-
-            # --- PASO B: VALIDACIÓN INTELIGENTE ---
-            nombre_check = normalizar_para_comparacion(nombre_limpio)
-            
-            # 1. Check Exacto (Normalizado)
-            if nombre_check in nombres_db_norm:
-                contador_omitidos += 1
-                continue
-
-            # 2. Check Fuzzy (Similitud Visual + Logica de Numeros)
-            es_duplicado_fuzzy = False
-            
-            for existente in nombres_db_originales:
-                # ¿Se parecen visualmente?
-                if es_parecido(nombre_limpio.lower(), existente.lower()):
-                    
-                    # LOGICA 1: ANÁLISIS DE NÚMEROS
-                    nums_nuevos = extraer_numeros_clave(nombre_limpio)
-                    nums_existentes = extraer_numeros_clave(existente)
-                    
-                    if nums_nuevos != nums_existentes:
-                        continue # Si los numeros son distintos, son materias distintas
-
-                    # LOGICA 2: REGLA DE LONGITUD (Para evitar "Proyecto" vs "Anteproyecto")
-                    diferencia_longitud = abs(len(nombre_limpio) - len(existente))
-                    if diferencia_longitud > 3:
-                         continue
-
-                    # Si pasa todo, es un duplicado
-                    print(f"  ⚠️ Detectado duplicado Fuzzy: '{nombre_limpio}' ~ '{existente}' -> OMITIDO")
-                    es_duplicado_fuzzy = True
-                    break
-            
-            if es_duplicado_fuzzy:
-                contador_omitidos += 1
-                continue
-
-            # --- PASO C: PREPARAR PARA INSERTAR ---
-            nombres_db_norm.add(nombre_check) # Agregamos al set temporal
-            nombres_db_originales.append(nombre_limpio)
-
-            id_depto = mapa_deptos.get(cod_depto)
-            if id_depto:
-                asignaturas_tup.append((nombre_limpio, id_depto))
-
-        # --- INSERTAR ---
-        if asignaturas_tup:
-            sql = "INSERT IGNORE INTO asignaturas (nombre, dpto) VALUES (%s, %s)"
-            cursor.executemany(sql, asignaturas_tup)
+        # Validación básica
+        if not cod_depto or not nombre_sucio:
+            errores.append("Fila con datos incompletos")
+            continue
+        
+        # Limpiar nombre
+        nombre_limpio = limpiar_nombre_asignatura(nombre_sucio)
+        if not nombre_limpio:
+            errores.append(f"Nombre vacío después de limpiar: '{nombre_sucio}'")
+            continue
+        
+        # Verificar departamento
+        id_depto = mapa_deptos.get(cod_depto)
+        if not id_depto:
+            errores.append(f"Depto '{cod_depto}' no encontrado para '{nombre_limpio}'")
+            continue
+        
+        # Verificar duplicado dentro del Excel
+        clave_excel = f"{nombre_limpio.lower()}_{cod_depto}"
+        if clave_excel in asignaturas_procesadas:
+            continue
+        asignaturas_procesadas.add(clave_excel)
+        
+        # Agregar para inserción
+        asignaturas_tup.append((nombre_limpio, id_depto))
+    
+    # Insertar 
+    inserts_realizados = 0
+    if asignaturas_tup:
+        try:
+            cursor.executemany("INSERT IGNORE INTO asignaturas (nombre, dpto) VALUES (%s, %s)", asignaturas_tup)
             connection.commit()
-            print(f"✅ ÉXITO: {cursor.rowcount} insertados. ({contador_omitidos} omitidos)")
-        else:
-            print(f"🧹 Todo limpio. {contador_omitidos} omitidos.")
+            inserts_realizados = cursor.rowcount
+        except Exception as e:
+            connection.rollback()
+            print(f"❌ Error al insertar asignaturas: {e}")
+            return
+    
+    # ==========================================
+    # REPORTE SIMPLIFICADO
+    # ==========================================
+    print(f"\n{'='*60}")
+    print(f"📊 REPORTE: ASIGNATURAS")
+    print(f"{'='*60}")
+    
+    print(f"📋 Registros en Excel: {len(intoData)}")
+    print(f"🔍 Únicos en este archivo: {len(asignaturas_procesadas)}")
+    print(f"✅ Nuevas insertadas: {inserts_realizados}")
+    
+    if errores:
+        print(f"\n⚠️  Errores/omitidos: {len(errores)}")
+        for i, error in enumerate(errores[:3], 1):
+            print(f"   {i}. {error}")
+        if len(errores) > 3:
+            print(f"   ... y {len(errores) - 3} más")
+    
+    print(f"{'='*60}")

@@ -1,108 +1,190 @@
-from functions.helpFunctions import normalizar_para_comparacion
+from functions.helpFunctions import formatDoc, normalizar_para_comparacion, limpiar_nombre_asignatura
 
 
-
-
-# ==============================================================================
-# 4. INSERTAR SECCIONES Y CURSOS (MODIFICADO)
-# ==============================================================================
 def insertSecciones(connection, intoData, year, periodo):
     cursor = connection.cursor()
+    print(f"🔄 Cargando Secciones {year}-{periodo}...")
 
-    print(f"🔄 Cargando Secciones para Año: {year}, Periodo: {periodo}...")
-
-    # 1. Mapas
+    # ==========================================
+    # 1. CARGA DE MAPAS (Memoria Caché)
+    # ==========================================
+    
+    # Asignaturas
     cursor.execute('SELECT id, nombre FROM asignaturas')
     mapa_asignaturas = {normalizar_para_comparacion(nom): id_a for id_a, nom in cursor.fetchall()}
 
+    # Docentes
     cursor.execute('SELECT id, nombre FROM docentes')
-    mapa_docentes = {nom.lower().strip(): id_d for id_d, nom in cursor.fetchall()}
+    mapa_docentes = {nom.strip().lower(): id_d for id_d, nom in cursor.fetchall()}
 
-    # ==============================================================================
-    # VALIDACIÓN: ASIGNATURA + DOCENTE EN ESTE PERIODO
-    # ==============================================================================
-    # Solo verificamos si el par (Materia, Docente) ya tiene curso este semestre.
-    sql_check = """
-        SELECT s.asignatura, s.docente
-        FROM secciones s
-        INNER JOIN cursos c ON s.id = c.id_seccion
-        WHERE c.year = %s AND c.periodo = %s
-    """
-    cursor.execute(sql_check, (year, periodo))
-    
-    # El set solo contiene tuplas de 2 elementos: (IdMateria, IdDocente)
-    secciones_registradas_este_semestre = set(cursor.fetchall()) 
+    # Secciones Existentes: {(docente_id, asignatura_id): id_seccion_real}
+    cursor.execute('SELECT id, docente, asignatura FROM secciones')
+    mapa_secciones = {}
+    for id_s, doc, asig in cursor.fetchall():
+        mapa_secciones[(doc, asig)] = id_s
 
-    datos_para_insertar = []
+    # Cursos Existentes: Para no intentar crear duplicados
+    cursor.execute('''
+        SELECT s.docente, s.asignatura, c.year, c.periodo 
+        FROM cursos c
+        JOIN secciones s ON c.seccion = s.id
+    ''')
+    cursos_existentes = set(cursor.fetchall())
+
+    # ==========================================
+    # 2. CLASIFICACIÓN DE DATOS
+    # ==========================================
+    secciones_nuevas_trigger = []   # Usarán el Trigger
+    cursos_manuales = []            # Usarán INSERT directo
     errores = []
-    duplicados_omitidos = 0
+    
+    # Cache temporal para manejar duplicados dentro del mismo Excel
+    secciones_procesadas_en_este_excel = set()
+    
+    stats = {
+        'nuevas': 0, 
+        'existentes_curso_nuevo': 0, 
+        'duplicados': 0, 
+        'ignorados_excel': 0,
+        'errores_asignatura': 0,
+        'errores_docente': 0
+    }
 
-    # 4. Procesar
     for reg in intoData:
-        nombre_asig_sucio = str(reg[0])
-        turno = str(reg[1]).strip()
-        nombre_seccion = str(reg[2]).strip() 
-        apellido_raw = reg[3]
-        nombre_raw = reg[4]
-
-        # Normalización y búsqueda de IDs
-        key_materia = normalizar_para_comparacion(nombre_asig_sucio)
+        # --- A. Limpieza de Datos ---
+        nombre_limpio = limpiar_nombre_asignatura(reg[0])
+        key_materia = normalizar_para_comparacion(nombre_limpio)
         id_asignatura = mapa_asignaturas.get(key_materia)
 
-        # Lógica Docente
         id_docente = None
-        nom_str = str(nombre_raw).strip() if nombre_raw else ""
-        ape_str = str(apellido_raw).strip() if apellido_raw else ""
-        nombre_completo_generado = "DESCONOCIDO"
+        nombre_docente = formatDoc(reg[2], reg[1])
+        if nombre_docente:
+            id_docente = mapa_docentes.get(nombre_docente.lower())
 
-        if nom_str and ape_str:
-            primer_nombre = nom_str.split()[0]
-            primer_apellido = ape_str.split()[0]
-            nombre_completo_generado = f"{primer_nombre} {primer_apellido}".lower()
-            id_docente = mapa_docentes.get(nombre_completo_generado)
+        if not id_asignatura:
+            stats['errores_asignatura'] += 1
+            errores.append(f"Asignatura no encontrada: '{nombre_limpio}'")
+            continue
+            
+        if not id_docente:
+            stats['errores_docente'] += 1
+            errores.append(f"Docente no encontrado: '{nombre_docente}' para '{nombre_limpio}'")
+            continue
 
-        if id_asignatura and id_docente:
-            # Llave única basada SOLO en Asignatura y Docente
-            llave_unica = (id_asignatura, id_docente)
-
-            if llave_unica in secciones_registradas_este_semestre:
-                duplicados_omitidos += 1
-            else:
-                # Si no existe en este semestre, preparamos la inserción
-                datos_para_insertar.append((nombre_seccion, id_docente, id_asignatura, turno))
-                
-                # Actualizamos el set local para evitar duplicados dentro del mismo Excel
-                secciones_registradas_este_semestre.add(llave_unica)
-        else:
-            motivo = []
-            if not id_asignatura: motivo.append(f"Asignatura no hallada: {nombre_asig_sucio}")
-            if not id_docente: motivo.append(f"Docente no hallado: {nombre_completo_generado}")
-            errores.append(f"Omitido: {', '.join(motivo)}")
-
-    # 5. Insertar y Disparar Trigger
-    if datos_para_insertar:
-        sql = "INSERT INTO secciones (nombre, docente, asignatura, turno) VALUES (%s, %s, %s, %s)"
+        clave = (id_docente, id_asignatura)
         
+        # --- B. Verificar duplicados dentro del mismo Excel ---
+        if clave in secciones_procesadas_en_este_excel:
+            stats['ignorados_excel'] += 1
+            continue  # Ya procesamos esta combinación en este Excel
+        secciones_procesadas_en_este_excel.add(clave)
+
+        # --- C. Lógica de Decisión ---
+        
+        # CASO 1: ¿La sección YA existe en la BASE DE DATOS?
+        if clave in mapa_secciones:
+            id_seccion_real = mapa_secciones[clave]
+
+            # CASO 1.1: Sección vieja. ¿Ya tiene curso este periodo?
+            if (id_docente, id_asignatura, year, periodo) in cursos_existentes:
+                stats['duplicados'] += 1
+            else:
+                # CASO 1.2: Sección vieja, periodo nuevo -> INSERT MANUAL
+                cursos_manuales.append((id_seccion_real, year, periodo))
+                stats['existentes_curso_nuevo'] += 1
+                # Actualizamos caché para evitar duplicados en este loop
+                cursos_existentes.add((id_docente, id_asignatura, year, periodo))
+
+        # CASO 2: La sección es totalmente NUEVA (no existe en BD)
+        else:
+            # La agregamos para insertar en secciones (usará trigger)
+            secciones_nuevas_trigger.append((id_docente, id_asignatura))
+            stats['nuevas'] += 1
+            
+            # NO la agregamos a mapa_secciones porque aún no existe en BD
+            # Se agregará después de la inserción
+
+    # ==========================================
+    # 3. EJECUCIÓN EN BASE DE DATOS
+    # ==========================================
+    try:
+        inserts_trigger = 0
+        inserts_manual = 0
+
+        # GRUPO A: Nuevas Secciones -> Usamos Variables + Trigger
+        if secciones_nuevas_trigger:
+            # 1. Declarar variables de sesión para el TRIGGER
+            cursor.execute(f"SET @year_sesion = {int(year)}")
+            cursor.execute(f"SET @periodo_sesion = {int(periodo)}")
+            
+            # 2. Insertar nuevas secciones (El trigger creará automáticamente los cursos)
+            sql = "INSERT INTO secciones (docente, asignatura) VALUES (%s, %s)"
+            cursor.executemany(sql, secciones_nuevas_trigger)
+            inserts_trigger = cursor.rowcount
+            
+            # 3. Limpiar variables INMEDIATAMENTE (Seguridad)
+            cursor.execute("SET @year_sesion = NULL")
+            cursor.execute("SET @periodo_sesion = NULL")
+
+        # GRUPO B: Secciones existentes -> Insertamos curso manualmente
+        if cursos_manuales:
+            # OPTIMIZACIÓN: Eliminado el bucle SELECT 1. Confiamos en la memoria + INSERT IGNORE
+            sql = "INSERT IGNORE INTO cursos (seccion, year, periodo) VALUES (%s, %s, %s)"
+            cursor.executemany(sql, cursos_manuales)
+            inserts_manual = cursor.rowcount
+
+        connection.commit()
+
+        # ==========================================
+        # 4. REPORTE DETALLADO
+        # ==========================================
+        print(f"\n{'='*60}")
+        print(f"📊 RESULTADO FINAL - PERIODO {year}-{periodo}")
+        print(f"{'='*60}")
+        
+        print(f"📋 TOTAL REGISTROS EXCEL: {len(intoData)}")
+        print(f"🔍 REGISTROS ÚNICOS PROCESADOS: {len(secciones_procesadas_en_este_excel)}")
+        
+        print(f"\n📚 SECCIONES:")
+        print(f"   • 🆕 Nuevas creadas (via trigger): {inserts_trigger}")
+        print(f"   • 🔄 Cursos para secciones existentes: {inserts_manual}")
+        
+        print(f"\n⚠️  OMISIONES:")
+        print(f"   • Duplicados en BD (sección + curso ya existían): {stats['duplicados']}")
+        print(f"   • Repetidos dentro del mismo Excel: {stats['ignorados_excel']}")
+        
+        print(f"\n❌ ERRORES:")
+        print(f"   • Asignaturas no encontradas: {stats['errores_asignatura']}")
+        print(f"   • Docentes no encontrados: {stats['errores_docente']}")
+        
+        print(f"\n🎯 RESUMEN:")
+        total_cursos = inserts_trigger + inserts_manual
+        if total_cursos > 0:
+            print(f"   ✅ ¡ÉXITO! Se crearon {total_cursos} cursos en total")
+            print(f"      ↳ {inserts_trigger} via trigger (secciones nuevas)")
+            print(f"      ↳ {inserts_manual} manualmente (secciones existentes)")
+        else:
+            print(f"   ℹ️  No se crearon nuevos cursos")
+        
+        # Mostrar primeros 5 errores si los hay
+        if errores:
+            print(f"\n🔍 DETALLE DE ERRORES (primeros 5):")
+            for i, error in enumerate(errores[:5], 1):
+                print(f"   {i}. {error}")
+            if len(errores) > 5:
+                print(f"   ... y {len(errores) - 5} más")
+        
+        print(f"{'='*60}")
+
+    except Exception as e:
+        connection.rollback()
+        print(f"\n❌ ERROR DURANTE LA INSERCIÓN: {e}")
+        print(f"   Se ha realizado rollback de todos los cambios.")
+        
+        # Limpieza de emergencia de variables globales
         try:
-            # Configuramos las variables para el Trigger
-            cursor.execute(f"SET @year_sesion = {year};")
-            cursor.execute(f"SET @periodo_sesion = {periodo};")
-            
-            cursor.executemany(sql, datos_para_insertar)
-            connection.commit()
-            
-            print(f"🚀 ÉXITO: {cursor.rowcount} secciones nuevas creadas.")
-            print(f"   (El trigger generó los cursos para {year}-{periodo})")
-            
-            if duplicados_omitidos > 0:
-                print(f"   ℹ️  {duplicados_omitidos} registros omitidos (Docente ya tiene esta materia en este periodo).")
-
-        except Exception as e:
-            connection.rollback()
-            print(f"❌ Error crítico SQL: {e}")
-    else:
-        print(f"⚠️ No hay nada nuevo para insertar. ({duplicados_omitidos} duplicados encontrados).")
-
-    if errores:
-        print(f"\n⚠️ Resumen de errores ({len(errores)}):")
-        for e in errores[:5]: print(e)
+            cursor.execute("SET @year_sesion = NULL")
+            cursor.execute("SET @periodo_sesion = NULL")
+        except:
+            pass # Ignorar errores al limpiar
+        
