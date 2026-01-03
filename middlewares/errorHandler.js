@@ -1,55 +1,57 @@
 const errorHandler = (err, req, res, next) => {
   let status = err.status || 500;
-  let message = err.message || 'Error interno del servidor';
+  let message = err.message || "Error interno del servidor";
 
-  /* JWT  */
-  if (err.name === 'JsonWebTokenError') {
+  /* JWT */
+  if (err.name === "JsonWebTokenError") {
     status = 401;
-    message = 'Token inválido';
+    message = "Token inválido";
   }
-
-  if (err.name === 'TokenExpiredError') {
+  if (err.name === "TokenExpiredError") {
     status = 401;
-    message = 'Token expirado';
+    message = "Token expirado";
   }
 
-  /*  MySQL  */
-
-  // Entrada duplicada (UNIQUE)
-  if (err.code === 'ER_DUP_ENTRY') {
-    status = 409;
-    message = 'Registro duplicado';
-  }
-
-  // Clave foránea inválida
-  if (err.code === 'ER_NO_REFERENCED_ROW_2') {
+  /* express-validator */
+  if (err.errors && Array.isArray(err.errors)) {
     status = 400;
-    message = 'Referencia inválida';
+    message = err.errors.map(e => e.msg).join(", ");
   }
 
-  // No se puede borrar / actualizar por FK
-  if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-    status = 400;
-    message = 'El registro está siendo utilizado';
+  /* PostgreSQL */
+  switch (err.code) {
+    case "23505": // unique_violation
+      status = 409;
+      message = "Registro duplicado";
+      break;
+    case "23503": // foreign_key_violation
+      status = 400;
+      message = "Referencia inválida";
+      break;
+    case "42601": // syntax_error
+      status = 500;
+      message = "Error en la consulta SQL";
+      break;
+    default:
+      break;
   }
 
-  // Error de sintaxis SQL
-  if (err.code === 'ER_PARSE_ERROR') {
-    status = 500;
-    message = 'Error en la consulta SQL';
+  /* Autorización */
+  if (status === 403) {
+    message = message || "No tiene permisos para esta acción";
   }
 
-  /* LOG */
-  console.error(`[${status}]`, err.code, err.sqlMessage);
+  console.error(`[${status}]`, err.code || "", err.sqlMessage || err.message, err.stack);
 
-  /*  RESPONSE  */
   res.status(status).json({
     status,
+    success: false,
     message,
-    ...(process.env.NODE_ENV === 'development' && {
-      mysqlCode: err.code,
-      mysqlMessage: err.sqlMessage,
+    ...(process.env.NODE_ENV === "development" && {
+      code: err.code,
+      sqlMessage: err.sqlMessage,
       stack: err.stack,
+      errors: err.errors || null,
     }),
   });
 };
