@@ -4,10 +4,9 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import createError from 'http-errors';
 import sequelize from './db/connection.js';
-// import authRoutes from './routes/auth.js';
+import authRoutes from './routes/authRoutes.js';
 
 /*
-import userRoutes from './routes/user.routes.js';
 import subjectRoutes from './routes/subject.routes.js';
 import reviewRoutes from './routes/review.routes.js';
 import tryRoutes from './routes/try.routes.js';
@@ -16,6 +15,7 @@ import tryRoutes from './routes/try.routes.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 import userRoutes from './routes/userRoutes.js';
+import authMiddleware from './middlewares/auth.js';
 
 dotenv.config();
 
@@ -29,13 +29,12 @@ app.use(morgan('dev'));
 
 /* Rutas */
 /*
-app.use('/users', userRoutes);
 app.use('/subjects', subjectRoutes);
 app.use('/reviews', reviewRoutes);
 app.use('/tries', tryRoutes);
 */
-// app.use('/auth', authRoutes);
-app.use('/users', userRoutes);
+app.use('/auth', authRoutes);
+app.use('/users', authMiddleware, userRoutes);
 
 app.get('/', (request, response) => {
   response.json('Hello world')
