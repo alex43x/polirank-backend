@@ -1,17 +1,7 @@
-from mysql.connector import Error
-import mysql.connector
-import os
+import psycopg2
 
-# Imports de funciones
-from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, obtener_año_periodo, limpiar_pantalla 
-from functions.appendDoc import insertDoc
-from functions.appendAsign import insertAsign
-from functions.appendMall import insertMalla
-from functions.appendSeccCur import insertSecciones
-
-
-
-#.\utils\Scripts\venv\Scripts\activate
+from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, limpiar_pantalla 
+from functions.appendDocs import insertDoc
 
 
 def menu_principal():
@@ -28,19 +18,22 @@ def menu_principal():
         print("===================================")
         
         opcion = input("Selecciona una opción: ")
+        limpiar_pantalla()
 
         if opcion == '1':
-            
-            
-            limpiar_pantalla()
             print("\nSeleccione archivo")
             ARCHIVO = seleccion_archivo()
             if not ARCHIVO: continue
             HOJA = obtener_nombre_hoja(ARCHIVO)
             
+            
+            
             #Extrae Nombres y Apellidos de los docentes
             FILA_DE_INICIO = 12
-            COLUMNAS_OBJETIVO = [12,13]
+            COLUMNAS_OBJETIVO = [12,13,14]
+            #12= Apellidos   13= Nombres    14= Correos
+             
+             
              
             intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
               
@@ -49,48 +42,54 @@ def menu_principal():
             input("\nPresiona ENTER para continuar...")
             
         elif opcion == '2':
-            
             print("\nSeleccione archivo")
             ARCHIVO = seleccion_archivo()
             if not ARCHIVO: continue
             HOJA = obtener_nombre_hoja(ARCHIVO)
             
-            #Extrae Asignatura y Departamento
             
+            
+            #Extrae Asignatura y Departamento
             FILA_DE_INICIO = 12
             COLUMNAS_OBJETIVO = [1,2]
+            # 1= Departamento  2= Asignatura
             
-            intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
             
-            insertAsign(connection,intoData)
+            
+            '''intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
+            insertAsign(connection,intoData)'''
            
             input("\nPresiona ENTER para continuar...")
             
         elif opcion == '3':
-            
             print("\nSeleccione archivo")
             ARCHIVO = seleccion_archivo()
             if not ARCHIVO: continue
             HOJA = obtener_nombre_hoja(ARCHIVO)
+            
+            
             FILA_DE_INICIO = 0
             COLUMNAS_OBJETIVO = [0,1,2]
+            # 0=Asignatura 1= Carrera 2=Semestre
+            
             intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
-            
-            
-            #El excel debe tener 3 columnas, la primera de asignatura, la segunda la carrera(siglas) y la tercera el semestre
-            insertMalla(connection, intoData)
+            '''insertMalla(connection, intoData)'''
             
             input("\nPresiona ENTER para continuar...")
             
         elif opcion == '4':
+            limpiar_pantalla()
             print("\nSeleccione archivo")
+            
+            
+            
             ARCHIVO = seleccion_archivo()
             if not ARCHIVO: continue 
             HOJA = obtener_nombre_hoja(ARCHIVO)
             
             
             # --- VALIDACIÓN IMPORTANTE ---
-            year, per = obtener_año_periodo(ARCHIVO, HOJA)
+            '''year, per = obtener_año_periodo(ARCHIVO, HOJA)
             
             if year is False or per is False:
                 print("❌ ERROR: No se pudo detectar el Año o Periodo en la celda D1.")
@@ -100,12 +99,12 @@ def menu_principal():
             # -----------------------------
 
             FILA_DE_INICIO = 12
-            # 2=Asignatura, 12=Apellidos, 13=Nombres
-            COLUMNAS_OBJETIVO = [2, 12, 13] 
+            # 2= Asignatura, 12= Apellidos, 13= Nombres, 14= Correos
+            COLUMNAS_OBJETIVO = [2, 12, 13, 14] 
             
             intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
 
-            insertSecciones(connection, intoData, year, per)
+            insertSecciones(connection, intoData, year, per)'''
             
             
             input("\nPresiona ENTER para continuar...")
@@ -118,21 +117,26 @@ def menu_principal():
         else:
             input("Opción no válida. Presiona ENTER para intentar de nuevo...")
 
+
+
+
+
+
+
 try:
-    connection = mysql.connector.connect(
-        host = "localhost",
-        port = 3306,
-        user = "root",
-        password = "Adelant5?",
-        db = "polirank_test2"
+    connection = psycopg2.connect(
+        host='localhost',
+        user='postgres',
+        password='Adelant5',
+        database='polirankDB',
+        options="-c search_path=polirank_test"
     )
-    if connection.is_connected():
+    if connection.closed == 0:
         if __name__ == "__main__":
-            menu_principal()
-                  
-except Error as ex:
-    print("Error durante la conexion : {}".format(ex))
+            menu_principal() 
+except Exception as ex:
+    print("Error durante la conexión:", ex)
 finally:
-    if connection.is_connected():
+    if connection.closed == 0:
         connection.close()
         print("Coneccion Cerrada")
