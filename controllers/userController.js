@@ -30,16 +30,17 @@ const getUserbyId = async (req, res) => {
 };
 
 const createUser = async (req, res) => {
-    const { name, email } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!name || !email) {
+    if (!name || !email || !password) {
         return res.status(400).json({ error: "Faltan campos requeridos" });
     }
 
     try {
         const newUser = await User.create({
             name,
-            email
+            email,
+            password
         });
 
         res.status(201).json(newUser);
