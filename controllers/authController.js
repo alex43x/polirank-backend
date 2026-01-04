@@ -1,20 +1,31 @@
-import { loginUser } from "../models/userModel.js";
+import User from "../models/userModel.js"; 
+import bcrypt from 'bcrypt';
+import jwt from "jsonwebtoken"
 
-export const login = async (req, res, next) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    const user = await User.findOne({ where: { email: email } });
 
-    // Validación básica (este se puede mejorar, pero dejo aca por simplicidad)
-    if (!email || !password) {
-      const err = new Error("Email y password son obligatorios");
-      err.status = 400;
-      throw err;
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const result = await loginUser(email, password);
+    const isMatch = await bcrypt.compare(password, user.password);
 
-    res.status(200).json(result);
-  } catch (err) {
-    next(err); // pasa todo al errorHandler
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN});
+
+    res.json({ token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
+
+export default {
+  login
+}
