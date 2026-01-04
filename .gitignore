@@ -1,0 +1,4 @@
+.env
+utils/Scripts/archivos
+utils/Scripts/__pycache__
+node_modules
