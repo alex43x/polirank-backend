@@ -47,9 +47,9 @@ def procesar_excel_exacto(archivo, nombre_hoja, indices_columnas, fila_inicio):
         # Mostrar con formato
         if data_final:
             # CORRECCIÓN 3: Quitamos el encabezado de "# Fila"
-            headers = [f"Col {i}" for i in indices_columnas]
+            '''headers = [f"Col {i}" for i in indices_columnas]
             print(f"\nDatos de '{nombre_hoja}' (Desde fila {fila_inicio}):")
-            print(tabulate(data_final, headers=headers, tablefmt="fancy_grid"))
+            print(tabulate(data_final, headers=headers, tablefmt="fancy_grid"))'''
             
             return data_final
         else:
@@ -119,51 +119,6 @@ def obtener_nombre_hoja(ruta_archivo):
             print("⚠️ Ingresa un número.")
             
             
-def numero_a_romano(match):
-    """Convierte números arábigos (1-10) a romanos (I-X)."""
-    mapa = {
-        '1': 'I', '2': 'II', '3': 'III', '4': 'IV', '5': 'V',
-        '6': 'VI', '7': 'VII', '8': 'VIII', '9': 'IX', '10': 'X'
-    }
-    # Usamos group(1) porque el regex captura el número
-    return mapa.get(match.group(1), match.group(1))
-
-def normalizar_para_comparacion(texto):
-    """
-    Normaliza texto para que 'Álgebra Lineal' sea igual a 'algebra lineal'.
-    1. Quita tildes.
-    2. Minusculas.
-    3. Convierte 'Matemática 1' a 'matematica i'.
-    """
-    if not texto: return ""
-    
-    # 1. Convertir a string
-    texto = str(texto)
-    
-    # 2. Normalización Unicode (Eliminar tildes: Á -> A)
-    texto = unicodedata.normalize('NFD', texto)
-    texto = ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
-    
-    # 3. Limpieza básica
-    texto = texto.lower().strip()
-    
-    # 4. Unificar espacios (eliminar dobles espacios)
-    texto = " ".join(texto.split())
-
-    # 5. Convertir número arábigo al final a romano (Ej: " 1" -> " i")
-    texto = re.sub(r'\b([1-9]|10)$', lambda m: numero_a_romano(m).lower(), texto)
-
-    return texto
-
-def limpiar_nombre_asignatura(texto):
-    if not texto: return ""
-    texto = str(texto)
-    # Eliminar (*) y basura visual
-    texto = re.sub(r'\s*\(\*+\)$', '', texto)
-    # Agregar: Eliminar espacios extra invisibles
-    texto = " ".join(texto.split()) 
-    return texto
-
 def formatDoc(nom, app):
     """Une Nombre y Apellido completos."""
     nombre_raw = str(nom).strip() if nom else ""
@@ -394,3 +349,75 @@ def es_correo_institucional(correo):
     if not correo:
         return False
     return '@pol.una.py' in correo.lower()
+
+
+
+
+
+
+
+
+
+
+
+
+
+def estandarizar_nombre_asignatura(nombre):
+    """
+    Versión DEFINITIVA:
+    1. Limpieza.
+    2. Corrección de Ortografía y Mayúsculas (Punto 3).
+    3. Romanos.
+    4. Formato de Guiones (Punto 3).
+    """
+    if not nombre: return ""
+    
+    # 1. Limpieza inicial
+    nombre = re.sub(r'\s*\(\*+\)', '', str(nombre))
+    nombre = ' '.join(nombre.split())
+    
+    # 2. DICCIONARIO DE CORRECCIONES (Aquí forzamos la mayúscula)
+    correcciones = {
+        "sotfware": "Software",  # Typo
+        "Sotfware": "Software",  # Typo Capitalizado
+        "software": "Software",  # <-- ESTO ARREGLA EL CASO "software" vs "Software"
+        "datamining": "Data Mining",
+        "Datamining": "Data Mining",
+        "Tecnologia": "Tecnología",
+        "lenguajes": "Lenguajes",
+    }
+    
+    # Reemplazo palabra por palabra para aplicar correcciones
+    palabras = nombre.split()
+    palabras_corregidas = [correcciones.get(p, p) for p in palabras]
+    nombre = " ".join(palabras_corregidas)
+
+    # Helper para romanos
+    def numero_a_romano(numero_str):
+        try:
+            num = int(numero_str)
+            mapa = {
+                1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V',
+                6: 'VI', 7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X'
+            }
+            return mapa.get(num, str(num))
+        except ValueError:
+            return numero_str
+
+    # 3. Lógica de Romanos
+    # Caso: Final de línea
+    nombre = re.sub(r'\b(\d+)$', lambda m: numero_a_romano(m.group(1)), nombre)
+    
+    # Caso: Electiva/Optativa en medio
+    nombre = re.sub(r'(Electiva|Optativa)\s+(\d+)', 
+                    lambda m: f"{m.group(1)} {numero_a_romano(m.group(2))}", 
+                    nombre, flags=re.IGNORECASE)
+
+    # 4. ARREGLO DE GUIONES (Punto 3)
+    # Separa guiones pegados a romanos: "VII-" se convierte en "VII - "
+    nombre = re.sub(r'\b([IVX]+)-', r'\1 - ', nombre)
+    
+    # Limpieza final por si quedaron dobles espacios
+    nombre = ' '.join(nombre.split())
+
+    return nombre
