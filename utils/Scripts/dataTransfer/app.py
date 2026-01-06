@@ -3,6 +3,7 @@ import psycopg2
 from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, limpiar_pantalla 
 from functions.appendDocs import insertDoc
 from functions.appendAsign import insertAsign
+from functions.appendSeccCur import insertSecciones
 
 
 def menu_principal():
@@ -89,15 +90,7 @@ def menu_principal():
             HOJA = obtener_nombre_hoja(ARCHIVO)
             
             
-            # --- VALIDACIÓN IMPORTANTE ---
-            '''year, per = obtener_año_periodo(ARCHIVO, HOJA)
-            
-            if year is False or per is False:
-                print("❌ ERROR: No se pudo detectar el Año o Periodo en la celda D1.")
-                print("   Verifique que la celda D1 tenga formato '(PRIMER/SEGUNDO) PERIODO (AÑO)'")
-                input("Presiona ENTER para volver al menú...")
-                continue # Regresa al menú, no intenta insertar
-            # -----------------------------
+           
 
             FILA_DE_INICIO = 12
             # 2= Asignatura, 12= Apellidos, 13= Nombres, 14= Correos
@@ -105,7 +98,24 @@ def menu_principal():
             
             intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
 
-            insertSecciones(connection, intoData, year, per)'''
+            # Solicitar año y periodo por consola
+            while True:
+                try:
+                    year = int(input("Ingrese el año (ej: 2026): ").strip())
+                    break
+                except ValueError:
+                    print("⚠️  Año inválido. Intente de nuevo.")
+            
+            while True:
+                try:
+                    periodo = int(input("Ingrese el periodo (1 o 2): ").strip())
+                    if periodo in (1, 2):
+                        break
+                    print("⚠️  Periodo inválido. Use 1 o 2.")
+                except ValueError:
+                    print("⚠️  Periodo inválido. Intente de nuevo.")
+
+            insertSecciones(connection, intoData, year, periodo)
             
             
             input("\nPresiona ENTER para continuar...")

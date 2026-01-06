@@ -249,9 +249,21 @@ def insertDoc(connection, intoData):
                                     id_existente = id_bd
                                     correo_existente = correo_bd
                                     
-                                    # NUEVO: Si el existente tiene un correo genérico y el nuevo tiene un correo institucional, actualizar
-                                    if correo_bd and es_correo_institucional(correo) and not es_correo_institucional(correo_bd):
-                                        # El nuevo correo es institucional y el existente no lo es (es genérico)
+                                    # Detectar si el correo actual es genérico (con o sin sufijo numérico)
+                                    correo_generico_esperado = generar_correo_generico(nombre_bd, set())
+                                    es_correo_generico_actual = False
+                                    if correo_bd and correo_generico_esperado and '@' in correo_generico_esperado:
+                                        correo_lower = correo_bd.lower()
+                                        base_local, base_dom = correo_generico_esperado.lower().split('@', 1)
+                                        if correo_lower == correo_generico_esperado.lower():
+                                            es_correo_generico_actual = True
+                                        elif correo_lower.endswith('@' + base_dom) and correo_lower.startswith(base_local):
+                                            sufijo = correo_lower[len(base_local):-(len(base_dom) + 1)]
+                                            if sufijo.isdigit():
+                                                es_correo_generico_actual = True
+                                    
+                                    # Si el existente tiene correo genérico (con o sin sufijo) o no institucional y el nuevo es institucional, actualizar
+                                    if correo_bd and es_correo_institucional(correo) and (not es_correo_institucional(correo_bd) or es_correo_generico_actual):
                                         docentes_a_actualizar.append((id_bd, correo, nombre_bd, correo_bd))
                                     # Si el existente no tiene correo y el nuevo sí, actualizar
                                     elif not correo_bd and correo:

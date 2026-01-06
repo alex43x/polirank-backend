@@ -350,18 +350,6 @@ def es_correo_institucional(correo):
         return False
     return '@pol.una.py' in correo.lower()
 
-
-
-
-
-
-
-
-
-
-
-
-
 def estandarizar_nombre_asignatura(nombre):
     """
     Versión DEFINITIVA:
