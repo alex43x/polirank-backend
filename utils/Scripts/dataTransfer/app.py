@@ -1,9 +1,15 @@
+import os
 import psycopg2
+from dotenv import load_dotenv
 
 from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, limpiar_pantalla 
 from functions.appendDocs import insertDoc
 from functions.appendAsign import insertAsign
 from functions.appendSeccCur import insertSecciones
+
+# Cargar variables de entorno desde el archivo .env en la raíz del proyecto
+env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), '.env')
+load_dotenv(env_path)
 
 
 def menu_principal():
@@ -134,20 +140,82 @@ def menu_principal():
 
 
 
+def obtener_configuracion_db():
+    """
+    Obtiene la configuración de la base de datos desde variables de entorno.
+    Retorna un diccionario con los parámetros de conexión.
+    """
+    # Variables requeridas
+    required_vars = {
+        'host': os.getenv('DB_HOST'),
+        'user': os.getenv('DB_USER'),
+        'password': os.getenv('DB_PASSWORD'),
+        'database': os.getenv('DB_NAME'),
+        'schema': os.getenv('DB_SCHEMA')
+    }
+    
+    # Verificar que todas las variables requeridas estén presentes
+    missing_vars = [key for key, value in required_vars.items() if not value]
+    if missing_vars:
+        print("❌ ERROR: Faltan las siguientes variables de entorno requeridas:")
+        for var in missing_vars:
+            var_name = f"DB_{var.upper()}" if var != 'schema' else 'DB_SCHEMA'
+            print(f"   • {var_name}")
+        print("\n💡 Asegúrate de que el archivo .env existe en la raíz del proyecto")
+        print("   y contiene todas las variables necesarias.")
+        return None
+    
+    # Puerto es opcional, por defecto 5432
+    port = os.getenv('DB_PORT', '5432')
+    
+    return {
+        'host': required_vars['host'],
+        'user': required_vars['user'],
+        'password': required_vars['password'],
+        'database': required_vars['database'],
+        'port': port,
+        'options': f"-c search_path={required_vars['schema']}"
+    }
+
+
+connection = None
 try:
-    connection = psycopg2.connect(
-        host='localhost',
-        user='postgres',
-        password='Adelant5',
-        database='polirankDB',
-        options="-c search_path=polirank_test"
-    )
+    # Obtener configuración de la base de datos
+    db_config = obtener_configuracion_db()
+    
+    if db_config is None:
+        print("\n⚠️  No se pudo cargar la configuración de la base de datos.")
+        print("   El script no puede continuar sin las credenciales necesarias.")
+        exit(1)
+    
+    # Intentar conectar a la base de datos
+    print("🔄 Intentando conectar a la base de datos...")
+    connection = psycopg2.connect(**db_config)
+    
     if connection.closed == 0:
+        print("✅ Conexión establecida correctamente.")
         if __name__ == "__main__":
-            menu_principal() 
+            menu_principal()
+    else:
+        print("❌ Error: La conexión se estableció pero está cerrada.")
+        
+except psycopg2.Error as db_error:
+    print(f"❌ ERROR DE BASE DE DATOS durante la conexión:")
+    print(f"   {db_error}")
+    print("\n💡 Verifica que:")
+    print("   • PostgreSQL esté corriendo")
+    print("   • Las credenciales en el archivo .env sean correctas")
+    print("   • La base de datos y el schema existan")
+    exit(1)
+    
 except Exception as ex:
-    print("Error durante la conexión:", ex)
+    print(f"❌ ERROR INESPERADO durante la conexión:")
+    print(f"   {ex}")
+    import traceback
+    traceback.print_exc()
+    exit(1)
+    
 finally:
-    if connection.closed == 0:
+    if connection and connection.closed == 0:
         connection.close()
-        print("Coneccion Cerrada")
+        print("\n✅ Conexión cerrada correctamente.")
