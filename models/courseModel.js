@@ -1,23 +1,23 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../dbconnection.js";
+import sequelize from "../db/connection.js";
 
-const Course = sequelize.define(
-  "Course",
+const Curso = sequelize.define(
+  "Curso",
   {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    seccionFK: {
+    seccion: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: "seccionFK",
+      field: "seccion",
     },
-    anio: {
+    year: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: "año",
+      field: "year",
     },
     periodo: {
       type: DataTypes.INTEGER,
@@ -25,9 +25,9 @@ const Course = sequelize.define(
     },
   },
   {
-    tableName: "Cursos",
+    tableName: "cursos",
     timestamps: false,
   }
 );
 
-export default Course;
+export default Curso;

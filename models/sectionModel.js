@@ -1,29 +1,29 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../dbconnection.js";
+import sequelize from "../db/connection.js";
 
-const Section = sequelize.define(
-  "Section",
+const Seccion = sequelize.define(
+  "Seccion",
   {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    docenteFK: {
+    docente: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: "docenteFK",
+      field: "docente",
     },
-    asignaturaFK: {
+    asignatura: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: "asignaturaFK",
+      field: "asignatura",
     },
   },
   {
-    tableName: "Secciones",
+    tableName: "secciones",
     timestamps: false,
   }
 );
 
-export default Section;
+export default Seccion;

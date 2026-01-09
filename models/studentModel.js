@@ -1,8 +1,9 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../dbconnection.js";
+import bcrypt from 'bcrypt'
+import sequelize from "../db/connection.js";
 
-const Student = sequelize.define(
-  "Student",
+const Alumno = sequelize.define(
+  "Alumno",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -17,10 +18,10 @@ const Student = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    carreraFK: {
+    carrera: {
       type: DataTypes.INTEGER,
-      allowNull: false,
-      field: "carreraFK",
+      allowNull: true,
+      field: "carrera",
     },
     password: {
       type: DataTypes.TEXT,
@@ -32,9 +33,25 @@ const Student = sequelize.define(
     },
   },
   {
-    tableName: "Alumnos",
+    tableName: "alumnos",
     timestamps: false,
+
+    hooks: {
+      async beforeCreate(user) {
+        const salt = await bcrypt.genSalt(12);
+        user.password = await bcrypt.hash(user.password, salt);
+      },
+    },
+    defaultScope: {
+      // Por defecto no incluir la contraseña
+      attributes: { exclude: ["password"] },
+    },
+    scopes: {
+      withPassword: {
+        attributes: { include: ['password'] },
+      },
+    },
   }
 );
 
-export default Student;
+export default Alumno;

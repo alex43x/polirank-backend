@@ -1,24 +1,24 @@
 // para la malla sol
 import { DataTypes } from "sequelize";
-import sequelize from "../dbconnection.js";
+import sequelize from "../db/connection.js";
 
-const Curriculum = sequelize.define(
-  "Curriculum",
+const Malla = sequelize.define(
+  "Malla",
   {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    carreraFK: {
+    carrera: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: "carreraFK",
+      field: "carrera",
     },
-    asignaturaFK: {
+    asignatura: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: "asignaturaFK",
+      field: "asignatura",
     },
     semestre: {
       type: DataTypes.INTEGER,
@@ -26,9 +26,9 @@ const Curriculum = sequelize.define(
     },
   },
   {
-    tableName: "Malla",
+    tableName: "malla",
     timestamps: false,
   }
 );
 
-export default Curriculum;
+export default Malla;

@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../dbconnection.js";
+import sequelize from "../db/connection.js";
 
-const Subject = sequelize.define(
-  "Subject",
+const Materia = sequelize.define(
+  "Materia",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -13,16 +13,16 @@ const Subject = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    deptoFK: {
+    depto: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: "deptoFK",
+      field: "depto",
     },
   },
   {
-    tableName: "Asignaturas",
+    tableName: "asignaturas",
     timestamps: false,
   }
 );
 
-export default Subject;
+export default Materia;
