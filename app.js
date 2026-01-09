@@ -12,6 +12,7 @@ import reviewRoutes from './routes/review.routes.js';
 import tryRoutes from './routes/try.routes.js';
 
 */
+import studentRoutes from './routes/studentRoutes.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 import userRoutes from './routes/userRoutes.js';
@@ -34,7 +35,7 @@ app.use('/reviews', reviewRoutes);
 app.use('/tries', tryRoutes);
 */
 app.use('/auth', authRoutes);
-app.use('/users', authMiddleware, userRoutes);
+app.use('/alumnos', authMiddleware, roleMiddleware(['ADMIN']), studentRoutes);
 
 app.get('/', (request, response) => {
   response.json('Hello world')
