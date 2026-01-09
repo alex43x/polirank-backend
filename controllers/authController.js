@@ -1,5 +1,6 @@
 import Alumno from "../models/studentModel.js";
 import Rol from "../models/roleModel.js";
+import Carrera from "../models/careerModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -8,10 +9,6 @@ const login = async (req, res, next) => {
     const { correo, password } = req.body;
     const loginUser = await Alumno.scope('withPassword').findOne({
       where: { correo },
-      include: {
-        model: Rol,
-        attributes: ["id", "nombre"],
-      },
     });
 
     if (!loginUser) {
@@ -25,19 +22,15 @@ const login = async (req, res, next) => {
     }
 
     const student = await Alumno.findByPk(loginUser.id, {
-      include: [
-        { model: Rol },
-      ]
+      include: [{ model: Rol }, { model: Carrera }],
     });
 
     const token = jwt.sign(
       {
         id: student.id,
         correo: student.correo,
-        rol: {
-          id: student.Rol.id,
-          nombre: student.Rol.nombre,
-        }
+        rol: student.Rol,
+        carrera: student.Carrera,
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
