@@ -15,8 +15,8 @@ import tryRoutes from './routes/try.routes.js';
 import studentRoutes from './routes/studentRoutes.js';
 import errorHandler from './middlewares/errorHandler.js';
 
-import userRoutes from './routes/userRoutes.js';
 import authMiddleware from './middlewares/auth.js';
+import roleMiddleware from './middlewares/role.js';
 
 dotenv.config();
 

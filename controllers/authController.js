@@ -1,31 +1,59 @@
-import User from "../models/userModel.js"; 
-import bcrypt from 'bcrypt';
-import jwt from "jsonwebtoken"
+import Alumno from "../models/studentModel.js";
+import Rol from "../models/roleModel.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ where: { email: email } });
+    const { correo, password } = req.body;
+    const loginUser = await Alumno.scope('withPassword').findOne({
+      where: { correo },
+      include: {
+        model: Rol,
+        attributes: ["id", "nombre"],
+      },
+    });
 
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+    if (!loginUser) {
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, loginUser.password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN});
+    const student = await Alumno.findByPk(loginUser.id, {
+      include: [
+        { model: Rol },
+      ]
+    });
 
-    res.json({ token });
+    const token = jwt.sign(
+      {
+        id: student.id,
+        correo: student.correo,
+        rol: {
+          id: student.Rol.id,
+          nombre: student.Rol.nombre,
+        }
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    res.status(200).json({
+      status: "success",
+      token,
+      data: { student },
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 export default {
-  login
-}
+  login,
+};
