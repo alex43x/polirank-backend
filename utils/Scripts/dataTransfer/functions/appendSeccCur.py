@@ -102,6 +102,7 @@ def insertSecciones(connection, intoData, year, periodo):
     secciones_nuevas = []      # Secciones a crear: [(docente_id, asignatura_id), ...]
     cursos_nuevos = []         # Cursos a crear: [(seccion_id, year, periodo), ...]
     errores = []
+    avisos = []
     
     # Cache para evitar duplicados dentro del mismo Excel
     secciones_procesadas_excel = set()
@@ -215,7 +216,7 @@ def insertSecciones(connection, intoData, year, periodo):
                         id_docente = mapa_docentes_nombre.get(key_docente)
                         if id_docente:
                             stats['docentes_por_nombre'] += 1
-                            errores.append(f"Fila {idx}: Correo '{correo_parcial}' no encontrado, se usó match por nombre para '{nombre_docente_formateado}'")
+                            avisos.append(f"Fila {idx}: Correo '{correo_parcial}' no encontrado, se usó match por nombre para '{nombre_docente_formateado}'")
                         else:
                             # No crear; sólo reportar
                             stats['errores_docente'] += 1
@@ -279,6 +280,7 @@ def insertSecciones(connection, intoData, year, periodo):
     print(f"   • Duplicados en BD (omitidos): {stats['duplicados_bd']}")
     print(f"   • Duplicados en Excel (omitidos): {stats['duplicados_excel']}")
     print(f"   • Errores totales: {len(errores)}")
+    print(f"   • Avisos (coincidencia alternativa): {len(avisos)}")
     print(f"   • Docentes identificados por correo: {stats['docentes_por_correo']}")
     print(f"   • Docentes identificados por correo genérico: {stats['docentes_por_correo_generado']}")
     print(f"   • Docentes identificados por nombre: {stats['docentes_por_nombre']}")
@@ -410,6 +412,14 @@ def insertSecciones(connection, intoData, year, periodo):
                 print(f"   {i}. {error}")
             if len(errores) > 10:
                 print(f"   ... y {len(errores) - 10} errores más")
+        
+        # Mostrar avisos (coincidencias por nombre o correo genérico cuando el correo dado no coincidió)
+        if avisos:
+            print(f"\nℹ️ AVISOS (primeros 10):")
+            for i, aviso in enumerate(avisos[:10], 1):
+                print(f"   {i}. {aviso}")
+            if len(avisos) > 10:
+                print(f"   ... y {len(avisos) - 10} avisos más")
         
         print(f"{'='*70}\n")
         
