@@ -3,16 +3,16 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import createError from 'http-errors';
-import authRoutes from './routes/auth.js';
-
-/*
-import userRoutes from './routes/user.routes.js';
-import subjectRoutes from './routes/subject.routes.js';
-import reviewRoutes from './routes/review.routes.js';
-import tryRoutes from './routes/try.routes.js';
-
-*/
+import authRoutes from './routes/authRoutes.js';
+import swaggerUi from 'swagger-ui-express'
+import swaggerFile from  './swagger_output.json' assert { type: "json" };
 import errorHandler from './middlewares/errorHandler.js';
+import subjectRoutes from './routes/subjectRoutes.js';
+import studentRoutes from './routes/studentRoutes.js';
+import triesRoutes from './routes/triesRoutes.js';
+import courseRoutes from './routes/courseRoutes.js';
+import authMiddleware from './middlewares/auth.js';
+import roleMiddleware from './middlewares/role.js';
 
 dotenv.config();
 
@@ -25,13 +25,17 @@ app.use(morgan('dev'));
 
 
 /* Rutas */
-/*
-app.use('/users', userRoutes);
-app.use('/subjects', subjectRoutes);
-app.use('/reviews', reviewRoutes);
-app.use('/tries', tryRoutes);
-*/
 app.use('/auth', authRoutes);
+app.use('/alumnos', authMiddleware, roleMiddleware(['ADMIN']), studentRoutes);
+app.use('/materias', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), subjectRoutes);
+app.use('/cursos', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), courseRoutes);
+// app.use('/reviews', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), reviewRoutes);
+app.use('/intentos', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), triesRoutes);
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
+app.get('/', (request, response) => {
+  response.json('Hello world')
+})
+
 /* Ruta no encontrada  */
 app.use((req, res, next) => {
   next(createError(404, 'Ruta no encontrada'));

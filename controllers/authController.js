@@ -1,20 +1,52 @@
-import { loginUser } from "../models/userModel.js";
+import Alumno from "../models/studentModel.js";
+import Rol from "../models/roleModel.js";
+import Carrera from "../models/careerModel.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-export const login = async (req, res, next) => {
+const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { correo, password } = req.body;
+    const loginUser = await Alumno.scope('withPassword').findOne({
+      where: { correo },
+    });
 
-    // Validación básica (este se puede mejorar, pero dejo aca por simplicidad)
-    if (!email || !password) {
-      const err = new Error("Email y password son obligatorios");
-      err.status = 400;
-      throw err;
+    if (!loginUser) {
+      return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const result = await loginUser(email, password);
+    const isMatch = await bcrypt.compare(password, loginUser.password);
 
-    res.status(200).json(result);
-  } catch (err) {
-    next(err); // pasa todo al errorHandler
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const student = await Alumno.findByPk(loginUser.id, {
+      include: [{ model: Rol }, { model: Carrera }],
+    });
+
+    const token = jwt.sign(
+      {
+        id: student.id,
+        correo: student.correo,
+        rol: student.Rol,
+        carrera: student.Carrera,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    res.status(200).json({
+      status: "success",
+      token,
+      data: { student },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
+};
+
+export default {
+  login,
 };
