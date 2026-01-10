@@ -50,19 +50,19 @@ Materia.hasMany(Malla, { foreignKey: 'asignatura' });
 
 
 // Definir relaciones: ReviewCab - Curso
-ReviewCab.belongsTo(Curso, { foreignKey: "curso", as: "CursoDetail" });
+ReviewCab.belongsTo(Curso, { foreignKey: "curso"    });
 Curso.hasMany(ReviewCab, { foreignKey: "curso" });
 
 // Definir relaciones: ReviewCab - Alumno
-ReviewCab.belongsTo(Alumno, { foreignKey: "alumno", as: "studentDetail" });
+    ReviewCab.belongsTo(Alumno, { foreignKey: "alumno" });
 Alumno.hasMany(ReviewCab, { foreignKey: "alumno" });
 
 // Definir relaciones: ReviewCont - ReviewCab
-ReviewCont.belongsTo(ReviewCab, { foreignKey: "revcab", as: "detalles" });
-ReviewCab.hasMany(ReviewCont, { foreignKey: "revcab", as: "detalles" });
+ReviewCont.belongsTo(ReviewCab, { foreignKey: "revcab" });
+ReviewCab.hasMany(ReviewCont, { foreignKey: "revcab" });
 
 // Definir relaciones: ReviewCont - Aspecto
-ReviewCont.belongsTo(Aspecto, { foreignKey: "aspecto", as: "aspectoDetail" });
+ReviewCont.belongsTo(Aspecto, { foreignKey: "aspecto" });
 Aspecto.hasMany(ReviewCont, { foreignKey: "aspecto" });
 
 export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, sequelize };
