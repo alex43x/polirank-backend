@@ -10,7 +10,7 @@ import authRoutes from './routes/authRoutes.js';
 import errorHandler from './middlewares/errorHandler.js';
 import subjectRoutes from './routes/subjectRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
-// import triesRoutes from './routes/triesRoutes.js';
+import triesRoutes from './routes/triesRoutes.js';
 import courseRoutes from './routes/courseRoutes.js';
 import authMiddleware from './middlewares/auth.js';
 import roleMiddleware from './middlewares/role.js';
@@ -31,7 +31,7 @@ app.use('/alumnos', authMiddleware, roleMiddleware(['ADMIN']), studentRoutes);
 app.use('/materias', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), subjectRoutes);
 app.use('/cursos', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), courseRoutes);
 // app.use('/reviews', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), reviewRoutes);
-// app.use('/intentos', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), triesRoutes);
+app.use('/intentos', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), triesRoutes);
 // app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 app.get('/', (request, response) => {
   response.json('Hello world')
