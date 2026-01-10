@@ -4,9 +4,8 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import createError from 'http-errors';
 import authRoutes from './routes/authRoutes.js';
-// import swaggerUi from 'swagger-ui-express'
-// import swaggerFile from  './swagger_output.json' assert { type: "json" };
-// import reviewRoutes from './routes/reviewRoutes.js';
+import swaggerUi from 'swagger-ui-express'
+import swaggerFile from  './swagger_output.json' assert { type: "json" };
 import errorHandler from './middlewares/errorHandler.js';
 import subjectRoutes from './routes/subjectRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
@@ -32,7 +31,7 @@ app.use('/materias', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), subje
 app.use('/cursos', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), courseRoutes);
 // app.use('/reviews', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), reviewRoutes);
 app.use('/intentos', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), triesRoutes);
-// app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 app.get('/', (request, response) => {
   response.json('Hello world')
 })
