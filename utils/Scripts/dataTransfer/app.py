@@ -6,6 +6,7 @@ from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, ob
 from functions.appendDocs import insertDoc
 from functions.appendAsign import insertAsign
 from functions.appendSeccCur import insertSecciones
+from functions.searchUsers import usersImport
 
 # Cargar variables de entorno desde el archivo .env en la raíz del proyecto
 env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), '.env')
@@ -20,7 +21,7 @@ def menu_principal():
         print("===================================")
         print("[1] Insertar Docentes")
         print("[2] Insertar Asignaturas")
-        print("[3] Insertar Mallas")
+        print("[3] Insertar Usuarios")
         print("[4] Insertar Secciones y Cursos")
         print("[0] Salir")
         print("===================================")
@@ -70,21 +71,30 @@ def menu_principal():
             input("\nPresiona ENTER para continuar...")
             
         elif opcion == '3':
-            print("\nSeleccione archivo")
-            ARCHIVO = seleccion_archivo()
-            if not ARCHIVO: continue
-            HOJA = obtener_nombre_hoja(ARCHIVO)
+            while True:
+                limpiar_pantalla()
+                print("===================================")
+                print("[1] Importar Usuarios desde GoogleContacts")
+                print("[2] Insertar Usuarios a Base de datos")
+                print("===================================")
+                opt = input("Selecciona una opción: ")
+                limpiar_pantalla()
+                if opt == '1':
+                    print("\n--- Importación de Usuarios Google ---")
+                    usersImport()
+                    input("\nPresiona ENTER para continuar...")
+                    break
+                    
+                elif opt == '2':
+                    print("INSERTAR A BASE DE DATOS")
+                    input("\nPresiona ENTER para continuar...")
+                    break
+                else:
+                    input("Opción no válida. Presiona ENTER para intentar de nuevo...")
             
             
-            FILA_DE_INICIO = 0
-            COLUMNAS_OBJETIVO = [0,1,2]
-            # 0=Asignatura 1= Carrera 2=Semestre
             
-            intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
-            '''insertMalla(connection, intoData)'''
-            
-            input("\nPresiona ENTER para continuar...")
-            
+         
         elif opcion == '4':
             limpiar_pantalla()
             print("\nSeleccione archivo")
