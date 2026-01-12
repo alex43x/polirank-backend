@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import createError from 'http-errors';
 import authRoutes from './routes/authRoutes.js';
 import swaggerUi from 'swagger-ui-express'
-import swaggerFile from  './swagger_output.json' assert { type: "json" };
+import fs from 'fs';
 import errorHandler from './middlewares/errorHandler.js';
 import subjectRoutes from './routes/subjectRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
@@ -23,6 +23,10 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Swagger UI
+const swaggerFile = JSON.parse(
+  fs.readFileSync(new URL('./swagger_output.json', import.meta.url))
+);
 
 /* Rutas */
 app.use('/auth', authRoutes);
