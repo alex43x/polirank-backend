@@ -15,8 +15,22 @@ CARRERAS_OBJETIVO = ["IIN", "LCIK"]
 
 def usersImport():
     """
-    Esta función se encarga de todo el proceso:
-    Conexión -> Descarga -> Filtrado -> Guardado Excel
+    Ejecuta el proceso completo de búsqueda, filtrado y exportación de usuarios desde el Directorio de Google.
+
+    Esta función establece conexión con la API People de Google, itera sobre el directorio del dominio
+    y filtra usuarios cuyas direcciones coincidan con las carreras objetivo (actualmente IIN, LCIK).
+    
+    El flujo de ejecución es:
+    1.  **Autenticación**: Verifica u obtiene credenciales OAuth2 desde la carpeta 'config'.
+    2.  **Extracción**: Descarga perfiles con campos 'names', 'emailAddresses', 'addresses', 'externalIds'.
+    3.  **Filtrado**: Selecciona usuarios si su dirección contiene alguna de las siglas en `CARRERAS_OBJETIVO`.
+    4.  **Exportación**: Abre un diálogo nativo del sistema (Tkinter) para guardar los resultados en Excel (.xlsx).
+
+    Args:
+        None: La función no recibe argumentos, utiliza configuración global definida en el script.
+
+    Returns:
+        None: No retorna ningún valor explícito. Genera un archivo local o imprime mensajes de estado/error.
     """
     creds = None
 
