@@ -49,8 +49,8 @@ def procesar_excel_exacto(archivo, nombre_hoja, indices_columnas, fila_inicio):
             # CORRECCIÓN 3: Quitamos el encabezado de "# Fila"
             '''headers = [f"Col {i}" for i in indices_columnas]
             print(f"\nDatos de '{nombre_hoja}' (Desde fila {fila_inicio}):")
-            print(tabulate(data_final, headers=headers, tablefmt="fancy_grid"))'''
-            
+            print(tabulate(data_final, headers=headers, tablefmt="fancy_grid"))
+            '''
             return data_final
         else:
             print(f"No hay datos a partir de la fila {fila_inicio}")

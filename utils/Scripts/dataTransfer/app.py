@@ -7,7 +7,7 @@ from functions.appendDocs import insertDoc
 from functions.appendAsign import insertAsign
 from functions.appendSeccCur import insertSecciones
 from functions.searchUsers import usersImport
-
+from functions.appendmalla import mostrardatos
 # Cargar variables de entorno desde el archivo .env en la raíz del proyecto
 env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), '.env')
 load_dotenv(env_path)
@@ -137,7 +137,26 @@ def menu_principal():
             input("\nPresiona ENTER para continuar...")
             
         elif opcion == '5':
+            limpiar_pantalla()
+            print("\nSeleccione archivo")
+            
+            
+            
+            ARCHIVO = seleccion_archivo()
+            if not ARCHIVO: continue 
+            HOJA = obtener_nombre_hoja(ARCHIVO)
+            
+           
+
+            FILA_DE_INICIO = 1
+            # 0= materias , 1= carreras, 2 = semestre
+            COLUMNAS_OBJETIVO = [0,1,2] 
+            
+            intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
+            mostrardatos(intoData)
             input("\nPresiona ENTER para continuar...")
+
+
         elif opcion == '0':
             print("¡Hasta luego!")
             break
