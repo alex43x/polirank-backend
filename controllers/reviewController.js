@@ -572,6 +572,234 @@ const deleteReview = async (req, res) => {
   }
 };
 
+
+// Obtiene promedio de los reviews registrados en el ultimo año y ultimo periodo en el curso seleccionado de un profesor en una materia 
+const lastReviewStats = async (req, res) => {
+  try {
+    const { teacherId, subjectId } = req.query;
+
+    // Validar que el profesor existe
+    const teacherExists = await Teacher.findByPk(teacherId);
+    if (!teacherExists) {
+      return res.status(404).json({ error: "El profesor no existe" });
+    }
+
+    // Validar que la materia existe
+    const subjectExists = await Subject.findByPk(subjectId);
+    if (!subjectExists) {
+      return res.status(404).json({ error: "La materia no existe" });
+    }
+
+    // Validar que la sección existe
+    const sectionExists = await Section.findOne({
+      where: {
+        docente: teacherId,
+        asignatura: subjectId
+      }
+    });
+
+    if (!sectionExists) {
+      return res.status(404).json({ error: "La seccion para el profesor y materia no existe" });
+    }
+
+    // Obtener el último período y año del profesor en la materia
+    const lastPeriodCourse = await Curso.findOne({
+      include: [
+        {
+          model: Section,
+          where: { docente: teacherId, asignatura: subjectId },
+        },
+      ],
+      order: [["year", "DESC"], ["periodo", "DESC"]],
+    });
+    
+    if (!lastPeriodCourse) {
+      return res.status(404).json({ error: "No se encontraron cursos para este profesor" });
+    }
+
+    const lastPeriod = lastPeriodCourse.periodo;
+    const lastYear = lastPeriodCourse.year;
+    
+    const lastRecords = await ReviewCab.findAll({
+      include: [
+        {
+          model: Curso,
+          include: [
+            {
+              model: Section,
+              where: { docente: teacherId, asignatura: subjectId },
+            },
+          ],
+        },
+        {
+          model: ReviewCont,
+          include: [Aspecto],
+        },
+      ],
+      where: {        
+        '$Curso.periodo$': lastPeriod,
+        '$Curso.year$': lastYear
+      }
+    });
+    
+    // Sumatoria de todos los valores de los aspectos
+    const aspectoSums = {};
+    const aspectoCounts = {};
+    
+    lastRecords.forEach((review) => {
+      review.ReviewConts.forEach((detail) => {
+        const aspectoName = detail.Aspecto.nombre;
+        if (!aspectoSums[aspectoName]) {
+          aspectoSums[aspectoName] = 0;
+          aspectoCounts[aspectoName] = 0;
+        }
+        aspectoSums[aspectoName] += detail.valor;
+        aspectoCounts[aspectoName] += 1;
+      });
+    });
+
+    // Calcular promedios
+    const averageRatings = {};
+    for (const aspecto in aspectoSums) {
+      averageRatings[aspecto] = aspectoSums[aspecto] / aspectoCounts[aspecto];
+    }
+
+    return res.status(200).json({
+      teacherId,
+      totalReviews: lastRecords.length,
+      averageRatings,
+    });
+
+
+  } catch (error) {
+    console.error("Error al obtener los ultimos reviews:", error);
+    res.status(500).json({ error: "Error al obtener los ultimos reviews" });
+  }
+};
+
+// Obtener historial de estadísticas por período y año
+const getReviewStats = async (req, res) => {
+  try {
+    const { teacherId, subjectId } = req.query;
+    
+    // Validar que el profesor existe
+    const teacherExists = await Teacher.findByPk(teacherId);
+    if (!teacherExists) {
+      return res.status(404).json({ error: "El profesor no existe" });
+    }
+
+    // Validar que la materia existe
+    const subjectExists = await Subject.findByPk(subjectId);
+    if (!subjectExists) {
+      return res.status(404).json({ error: "La materia no existe" });
+    }
+
+    const sectionExists = await Section.findOne({
+      where: {
+        docente: teacherId,
+        asignatura: subjectId
+      }
+    });
+
+    if (!sectionExists) {
+      return res.status(404).json({ error: "La seccion para el profesor y materia no existe" });
+    }
+
+    // Obtener todos los reviews con sus cursos
+    const stats = await ReviewCab.findAll({
+      include: [
+        {
+          model: Curso,
+          include: [
+            {
+              model: Section,
+              where: { docente: teacherId, asignatura: subjectId },
+            },
+          ],
+        },
+        {
+          model: ReviewCont,
+          include: [
+            {
+              model: Aspecto,
+            }
+          ],
+        },
+      ],
+    });
+
+    // Agrupar por período y año
+    const historyByPeriod = {};
+
+    stats.forEach((review) => {
+      const periodo = review.Curso.periodo;
+      const year = review.Curso.year;
+      const key = `${year}-${periodo}`; // Ejemplo: "2024-1" o "2023-2"
+
+      if (!historyByPeriod[key]) {
+        historyByPeriod[key] = {
+          periodo,
+          year,
+          totalReviews: 0,
+          aspectoSums: {},
+          aspectoCounts: {}
+        };
+      }
+
+      historyByPeriod[key].totalReviews += 1;
+
+      // Procesar cada aspecto del review
+      review.ReviewConts.forEach((detail) => {
+        const aspectoName = detail.Aspecto.nombre;
+        
+        if (!historyByPeriod[key].aspectoSums[aspectoName]) {
+          historyByPeriod[key].aspectoSums[aspectoName] = 0;
+          historyByPeriod[key].aspectoCounts[aspectoName] = 0;
+        }
+        
+        historyByPeriod[key].aspectoSums[aspectoName] += detail.valor;
+        historyByPeriod[key].aspectoCounts[aspectoName] += 1;
+      });
+    });
+
+    // Calcular promedios y formatear resultado
+    const history = Object.keys(historyByPeriod).map(key => {
+      const period = historyByPeriod[key];
+      const averageRatings = {};
+
+      for (const aspecto in period.aspectoSums) {
+        averageRatings[aspecto] = period.aspectoSums[aspecto] / period.aspectoCounts[aspecto];
+      }
+
+      return {
+        periodo: period.periodo,
+        year: period.year,
+        totalReviews: period.totalReviews,
+        averageRatings
+      };
+    });
+
+    // Ordenar por año y período (más reciente primero)
+    history.sort((a, b) => {
+      if (a.year !== b.year) {
+        return b.year - a.year;
+      }
+      return b.periodo - a.periodo;
+    });
+
+    return res.status(200).json({
+      teacherId,
+      subjectId,
+      history
+    });
+
+  } catch (error) {
+    console.error("Error al obtener las estadísticas de reviews:", error);
+    res.status(500).json({ error: "Error al obtener las estadísticas de reviews" });
+  }
+}
+
+
 export {
   createReview,
   getAllReviews,
@@ -583,4 +811,6 @@ export {
   getReviewOfCourse,
   updateReviewOfCourse,
   deleteReviewOfCourse,
+  lastReviewStats,
+  getReviewStats
 };
