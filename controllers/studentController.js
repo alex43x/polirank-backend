@@ -25,18 +25,18 @@ const getAllStudents = async (req, res) => {
     if (search) {
       whereConditions[Op.or] = [
         { nombre: { [Op.iLike]: `%${search}%` } },
-        { correo: { [Op.iLike]: `%${search}%` } }
+        { correo: { [Op.iLike]: `%${search}%` } },
       ];
     }
 
     // Filtro por carrera
     if (carrera_id) {
-      whereConditions.carrera_id = carrera_id;
+      whereConditions.carrera = carrera_id;
     }
 
     // Filtro por rol
     if (rol_id) {
-      whereConditions.rol_id = rol_id;
+      whereConditions.rol = rol_id;
     }
 
     const students = await Alumno.findAndCountAll({
@@ -51,7 +51,7 @@ const getAllStudents = async (req, res) => {
       totalPages: Math.ceil(students.count / limit),
       currentPage: page,
       limit,
-      students: students.rows
+      students: students.rows,
     });
   } catch (error) {
     console.error("Error al obtener los usuarios:", error);
@@ -107,9 +107,9 @@ const getStudentReviews = async (req, res) => {
 };
 
 const createStudent = async (req, res) => {
-  const { nombre, correo, password } = req.body;
+  const { nombre, correo, password, carrera, rol } = req.body;
 
-  if (!nombre || !correo || !password) {
+  if (!nombre || !correo || !password || !carrera || !rol) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
@@ -118,6 +118,8 @@ const createStudent = async (req, res) => {
       nombre,
       correo,
       password,
+      carrera,
+      rol,
     });
 
     res.status(201).json(newStudent);
