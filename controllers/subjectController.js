@@ -2,29 +2,32 @@ import Subject from "../models/subjectModel.js";
 import Section from "../models/sectionModel.js";
 import Malla from "../models/curriculumModel.js";
 import Docente from "../models/teacherModel.js";
+import Departamento from "../models/departmentModel.js";
 import { Op } from "sequelize";
 
 
 // Helper para obtener IDs de asignaturas basado en mallas curriculares
-const getSubjectIdsByCurriculum = async (careerId, semester = null) => {
+const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
+  const whereConditions = {};
+
+  // Si careerId existe → filtramos por carrera
+  if (careerId !== null) {
+    whereConditions.carrera = careerId;
+  }
+
+  // Si se pasó semestre → filtramos por semestre
+  if (semester !== null) {
+    whereConditions.semestre = semester;
+  }
+
   const mallas = await Malla.findAndCountAll({
-    where: { carrera: careerId },
+    where: whereConditions,
   });
 
   if (mallas.count === 0) {
     return null;
   }
-
-  // Si se proporciona semestre, filtrar por semestre
-  if (semester) {
-    const semesterSubjectIds = mallas.rows
-      .filter((malla) => malla.semestre === parseInt(semester))
-      .map((malla) => malla.asignatura);
-    
-    return semesterSubjectIds;
-  }
-
-  // Si no hay filtro de semestre, devolver todos los IDs
+  
   const subjectIds = mallas.rows.map((malla) => malla.asignatura);
   return subjectIds;
 };
@@ -55,8 +58,8 @@ const getAllSubjects = async (req, res) => {
     // Aplicar filtros por segun el rol del usuario
     switch (currentUser.rol.nombre) {
       case "ADMIN":
-        // ADMIN puede ver todas las materias, (puede aplicar filtro por carrera si se proporciona)
-        if (career_id) {
+        // ADMIN puede ver todas las materias
+        if (career_id || semester) {
           const subjectIds = await getSubjectIdsByCurriculum(career_id, semester);
           
           if (!subjectIds) {
@@ -100,11 +103,16 @@ const getAllSubjects = async (req, res) => {
 
     // Tanto el Admin como el Student pueden aplicar filtro por departamento
     if (dpto_id) {
-      whereConditions.dpto_id = dpto_id;
+      whereConditions.depto = dpto_id;
     }
 
     const subjects = await Subject.findAndCountAll({
       where: whereConditions,
+      include: [
+        {
+          model: Departamento,
+        },
+      ],
       order: [["id", "ASC"]],
       limit,
       offset,

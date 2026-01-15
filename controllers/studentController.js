@@ -1,4 +1,9 @@
+import Aspecto from "../models/aspectModel.js";
+import ReviewCab from "../models/reviewCab.js";
+import ReviewCont from "../models/reviewCont.js";
+import Rol from "../models/roleModel.js";
 import Alumno from "../models/studentModel.js";
+import Carrera from "../models/careerModel.js";
 import { Op } from "sequelize";
 
 const getAllStudents = async (req, res) => {
@@ -58,7 +63,10 @@ const getStudentbyId = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const student = await Alumno.findByPk(id);
+    const student = await Alumno.findByPk(id,
+      {
+      include: [{ model: Rol }, { model: Carrera }]
+    });
 
     if (!student) {
       return res.status(404).json({ error: "Usuario no encontrado" });
@@ -68,6 +76,33 @@ const getStudentbyId = async (req, res) => {
   } catch (error) {
     console.error("Error al obtener el usuario:", error);
     res.status(500).send("Error al obtener el usuario");
+  }
+};
+
+const getStudentReviews = async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const reviews = await ReviewCab.findAndCountAll({
+      where: { alumno: id },
+      include: [
+        {
+          model: ReviewCont,
+          include: [
+            {
+              model: Aspecto,
+            },
+          ],
+        },
+      ],
+    });
+    if (reviews.count === 0) {
+      return res.status(404).json({ error: "No se encontraron reseñas para este usuario" });
+    }
+    return res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Error al obtener las reseñas del usuario:", error);
+    res.status(500).send("Error al obtener las reseñas del usuario");
   }
 };
 
@@ -137,6 +172,7 @@ const deleteStudent = async (req, res) => {
 export default {
   getAllStudents,
   getStudentbyId,
+  getStudentReviews,
   createStudent,
   updateStudent,
   deleteStudent,
