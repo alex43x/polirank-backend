@@ -8,7 +8,6 @@ import { Op } from "sequelize";
 
 // Helper para obtener IDs de asignaturas basado en mallas curriculares
 const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
-  console.log("Fetching Curriculum with filters - Career ID:", careerId, "Semester:", semester);
   const whereConditions = {};
 
   // Si careerId existe → filtramos por carrera
@@ -25,18 +24,12 @@ const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
     where: whereConditions,
   });
 
-  console.log(whereConditions)
-  console.log("Curriculum Records Found:", mallas.count);
-
   if (mallas.count === 0) {
     return null;
   }
   
   const subjectIds = mallas.rows.map((malla) => malla.asignatura);
-  console.log("Subject IDs from Curriculum:", subjectIds);
   return subjectIds;
-  
-
 };
 
 const getAllSubjects = async (req, res) => {
@@ -66,7 +59,7 @@ const getAllSubjects = async (req, res) => {
     switch (currentUser.rol.nombre) {
       case "ADMIN":
         // ADMIN puede ver todas las materias
-        if (career_id) {
+        if (career_id || semester) {
           const subjectIds = await getSubjectIdsByCurriculum(career_id, semester);
           
           if (!subjectIds) {
