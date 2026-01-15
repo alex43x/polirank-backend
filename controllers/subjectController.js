@@ -135,7 +135,30 @@ const getSubjectbyId = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const subject = await Subject.findByPk(id);
+    const currentUser = req.user;
+
+    if (currentUser.rol.nombre === "STUDENT") {
+      // Verificar que la materia pertenezca a la carrera del estudiante
+      const subjectIds = await getSubjectIdsByCurriculum(currentUser.carrera.id);
+      
+      if (!subjectIds || !subjectIds.includes(parseInt(id))) {
+        return res.status(403).json({ 
+          error: "No tienes permisos para ver esta materia" 
+        });
+      }
+    } else if (currentUser.rol.nombre !== "ADMIN") {
+      return res.status(403).json({ 
+        error: "No tienes permisos para ver materias" 
+      });
+    }
+
+    const subject = await Subject.findByPk(id, {
+      include: [
+        {
+          model: Departamento,
+        },
+      ],
+    });
 
     if (!subject) {
       return res.status(404).json({ error: "Materia no encontrada" });
@@ -152,14 +175,31 @@ const getSectionsBySubjectId = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const sections = await await Section.findAll({
-    where: { asignatura: id },
-    include: [
-      {
-        model: Docente,
-      },
-    ],
-  });
+    const currentUser = req.user;
+
+    if (currentUser.rol.nombre === "STUDENT") {
+      const subjectIds = await getSubjectIdsByCurriculum(currentUser.carrera.id);
+      
+      if (!subjectIds || !subjectIds.includes(parseInt(id))) {
+        return res.status(403).json({ 
+          error: "No tienes permisos para ver las secciones de esta materia" 
+        });
+      }
+    } else if (currentUser.rol.nombre !== "ADMIN") {
+      return res.status(403).json({ 
+        error: "No tienes permisos para ver secciones" 
+      });
+    }
+
+    const sections = await Section.findAll({
+      where: { asignatura: id },
+      include: [
+        {
+          model: Docente,
+        },
+      ],
+    });
+    
     return res.status(200).json(sections);
   } catch (error) {
     console.error("Error al obtener las secciones:", error);
