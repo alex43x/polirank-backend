@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import bcrypt from 'bcrypt'
+import bcrypt from "bcrypt";
 import sequelize from "../db/connection.js";
 
 const Alumno = sequelize.define(
@@ -48,7 +48,7 @@ const Alumno = sequelize.define(
     },
     scopes: {
       withPassword: {
-        attributes: { include: ['password'] },
+        attributes: { include: ["password"] },
       },
     },
   }
