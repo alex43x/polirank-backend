@@ -1,8 +1,8 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../db/connection.js";
 
-const Departmento = sequelize.define(
-    "Departmento", {
+const Departamento = sequelize.define(
+    "Departamento", {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -22,4 +22,4 @@ const Departmento = sequelize.define(
     timestamps: false,          
     });
 
-export default  Departmento;
+export default  Departamento;

@@ -11,7 +11,7 @@ import Curso from "./courseModel.js";
 import Malla from "./curriculumModel.js";
 import ReviewCab from "./reviewCab.js";
 import ReviewCont from "./reviewCont.js";
-import Departmento from "./departmentModel.js";
+import Departamento from "./departmentModel.js";
 
 // Definir relaciones: Alumno - Rol
 Alumno.belongsTo(Rol, { foreignKey: 'rol' });
@@ -67,7 +67,7 @@ ReviewCont.belongsTo(Aspecto, { foreignKey: "aspecto" });
 Aspecto.hasMany(ReviewCont, { foreignKey: "aspecto" });
 
 // Definir relaciones: Materia - Departamento
-Materia.belongsTo(Departmento, {foreignKey: 'depto'});
-Departmento.hasMany(Materia, {foreignKey: 'depto'});
+Materia.belongsTo(Departamento, {foreignKey: 'depto'});
+Departamento.hasMany(Materia, {foreignKey: 'depto'});
 
 export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, sequelize };
