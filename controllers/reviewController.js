@@ -82,7 +82,7 @@ const getReviewsByCourse = async (req, res) => {
   }
 };
 
-// Obtener reviews con filtros flexibles 
+// Obtener reviews con filtros flexibles
 const getAllReviews = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -344,7 +344,7 @@ const updateReviewOfCourse = async (req, res) => {
     const usuarioId = req.user.id;
 
     // Validar que el curso existe
-    const courseExists = await Course.findByPk(id);
+    const courseExists = await Curso.findByPk(id);
     if (!courseExists) {
       return res.status(404).json({ error: "El curso no existe" });
     }
@@ -573,7 +573,7 @@ const deleteReview = async (req, res) => {
 };
 
 
-// Obtiene promedio de los reviews registrados en el ultimo año y ultimo periodo en el curso seleccionado de un profesor en una materia 
+// Obtiene promedio de los reviews registrados en el ultimo año y ultimo periodo en el curso seleccionado de un profesor en una materia
 const lastReviewStats = async (req, res) => {
   try {
     const { teacherId, subjectId } = req.query;
@@ -597,7 +597,7 @@ const lastReviewStats = async (req, res) => {
         asignatura: subjectId
       }
     });
-
+    
     if (!sectionExists) {
       return res.status(404).json({ error: "La seccion para el profesor y materia no existe" });
     }
@@ -612,14 +612,14 @@ const lastReviewStats = async (req, res) => {
       ],
       order: [["year", "DESC"], ["periodo", "DESC"]],
     });
-    
+
     if (!lastPeriodCourse) {
       return res.status(404).json({ error: "No se encontraron cursos para este profesor" });
     }
 
     const lastPeriod = lastPeriodCourse.periodo;
     const lastYear = lastPeriodCourse.year;
-    
+
     const lastRecords = await ReviewCab.findAll({
       include: [
         {
@@ -636,16 +636,16 @@ const lastReviewStats = async (req, res) => {
           include: [Aspecto],
         },
       ],
-      where: {        
+      where: {
         '$Curso.periodo$': lastPeriod,
         '$Curso.year$': lastYear
       }
     });
-    
+
     // Sumatoria de todos los valores de los aspectos
     const aspectoSums = {};
     const aspectoCounts = {};
-    
+
     lastRecords.forEach((review) => {
       review.ReviewConts.forEach((detail) => {
         const aspectoName = detail.Aspecto.nombre;
@@ -681,7 +681,7 @@ const lastReviewStats = async (req, res) => {
 const getReviewStats = async (req, res) => {
   try {
     const { teacherId, subjectId } = req.query;
-    
+
     // Validar que el profesor existe
     const teacherExists = await Teacher.findByPk(teacherId);
     if (!teacherExists) {
@@ -710,6 +710,7 @@ const getReviewStats = async (req, res) => {
       include: [
         {
           model: Curso,
+          required: true,
           include: [
             {
               model: Section,
@@ -751,12 +752,12 @@ const getReviewStats = async (req, res) => {
       // Procesar cada aspecto del review
       review.ReviewConts.forEach((detail) => {
         const aspectoName = detail.Aspecto.nombre;
-        
+
         if (!historyByPeriod[key].aspectoSums[aspectoName]) {
           historyByPeriod[key].aspectoSums[aspectoName] = 0;
           historyByPeriod[key].aspectoCounts[aspectoName] = 0;
         }
-        
+
         historyByPeriod[key].aspectoSums[aspectoName] += detail.valor;
         historyByPeriod[key].aspectoCounts[aspectoName] += 1;
       });

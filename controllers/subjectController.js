@@ -24,12 +24,18 @@ const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
     where: whereConditions,
   });
 
+  console.log(whereConditions)
+  console.log("Curriculum Records Found:", mallas.count);
+
   if (mallas.count === 0) {
     return null;
   }
   
   const subjectIds = mallas.rows.map((malla) => malla.asignatura);
+  console.log("Subject IDs from Curriculum:", subjectIds);
   return subjectIds;
+  
+
 };
 
 const getAllSubjects = async (req, res) => {
