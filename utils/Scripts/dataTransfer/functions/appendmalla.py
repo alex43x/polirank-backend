@@ -28,7 +28,17 @@ def insertMalla(connection,tabla):
         cursor.close()
         return
     
+    total_filas = 0
+    insertadas = 0
+    asignaturas_no_encontradas = set()
+    carreras_no_encontradas = set()
+    asignaturas_vacias = 0
+
+    # para evitar duplicados en la malla
+    combinaciones_insertadas = set()  # (id_carrera, id_asig, semestre)
+    
     for linea in tabla:
+        total_filas+=1
         if len(linea[0]) < 3:
             continue
 
@@ -36,18 +46,28 @@ def insertMalla(connection,tabla):
         nom_carrera = str(linea[1]).strip().upper()
         semestre = linea[2]
 
+        if not nom_asig:
+            asignaturas_vacias+=1
+            continue
+
         nombre_asig_std = estandarizar_nombre_asignatura(nom_asig)
 
         if nombre_asig_std not in mapa_asignaturas:
-            print(f"⚠ Asignatura no encontrada: {nom_asig}")
+            asignaturas_no_encontradas.add(nom_asig)
             continue
         
         if nom_carrera not in mapa_carreras:
-            print(f"⚠ Carrera no encontrada: {nom_carrera}")
+            carreras_no_encontradas.add(nom_carrera)
             continue
         
         id_asig = mapa_asignaturas[nombre_asig_std]
         id_carrera = mapa_carreras[nom_carrera]
+
+
+        clave = (id_carrera, id_asig, semestre)
+        if clave in combinaciones_insertadas:
+            continue  # evita duplicados
+
         try:
             cursor.execute(
                 """
@@ -56,9 +76,28 @@ def insertMalla(connection,tabla):
                 """,
                 (id_carrera,id_asig,semestre)
             )
+            combinaciones_insertadas.add(clave)
+            insertadas+=1
+
         except Exception as e:
             print(f"❌ Error insertando {nom_asig}: {e}")
 
     connection.commit()
     cursor.close()
-    print("🎉 Carga de malla finalizada")
+
+    print("\n📊 REPORTE DE CARGA DE MALLA")
+    print(f"Total filas Excel: {total_filas}")
+    print(f"Insertadas en malla (únicas): {insertadas}")
+    print(f"Asignaturas vacías: {asignaturas_vacias}")
+    print(f"Asignaturas no encontradas: {len(asignaturas_no_encontradas)}")
+    print(f"Carreras no encontradas: {len(carreras_no_encontradas)}")
+
+    if asignaturas_no_encontradas:
+        print("\n📌 Asignaturas faltantes:")
+        for a in sorted(asignaturas_no_encontradas):
+            print(f" - {a}")
+
+    if carreras_no_encontradas:
+        print("\n📌 Carreras faltantes:")
+        for c in sorted(carreras_no_encontradas):
+            print(f" - {c}")
