@@ -1,6 +1,9 @@
 import Alumno from "../models/studentModel.js";
 import Rol from "../models/roleModel.js";
 import Carrera from "../models/careerModel.js";
+import Aspecto from "../models/aspectModel.js";
+import ReviewCont from "../models/reviewCont.js";
+import ReviewCab from "../models/reviewCab.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -47,6 +50,43 @@ const login = async (req, res, next) => {
   }
 };
 
+
+const getUserProfile = async (req, res) => {
+  const currentUser = req.user;
+
+  try {
+    const student = await Alumno.findByPk(currentUser.id, {
+      include: [
+        { model: Rol }, 
+        { model: Carrera }, 
+      ], 
+    }); 
+    if (!student) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const reviews = await ReviewCab.findAndCountAll({
+      where: { alumno: currentUser.id },
+      include: [
+        {
+          model: ReviewCont,
+          include: [
+            {
+              model: Aspecto,
+            },
+          ],
+        },
+      ],
+    });
+
+    res.status(200).json({ student, reviews });
+  }
+  catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+
 export default {
   login,
+  getUserProfile
 };
