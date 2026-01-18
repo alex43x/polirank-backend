@@ -2,33 +2,33 @@ import express from "express";
 import {
   getAllCourses,
   getCourseById,
-  createCourse,
-} from "../controllers/courseController.js";
-import {
   getReviewsByCourse,
-  createReviewForCourse,
-  getReviewOfCourse,
-  updateReviewOfCourse,
-  deleteReviewOfCourse,
-  getReviewStats,
-  lastReviewStats
-} from "../controllers/reviewController.js";
+} from "../controllers/courseController.js";
 
 const courseRoutes = express.Router();
 
-// Rutas para cursos
-courseRoutes.get("/", getAllCourses);
-courseRoutes.get("/:id", getCourseById);
-courseRoutes.post("/", createCourse);
+  // Rutas para cursos
+  courseRoutes.get("/", 
+    /* #swagger.tags = ['Cursos']
+      #swagger.summary = 'Obtener todos los cursos'
+      #swagger.description = 'Endpoint para obtener la lista de todos los cursos' */
+    getAllCourses
+  );
 
-// Rutas para reviews de cursos específicos
-courseRoutes.get("/:id/reviews", getReviewsByCourse);
-courseRoutes.post("/:id/reviews", createReviewForCourse);
-courseRoutes.get("/:id/reviews/last", lastReviewStats);
-courseRoutes.get("/:id/reviews/history", getReviewStats);
-courseRoutes.get("/:id/reviews/:reviewId", getReviewOfCourse);
-courseRoutes.put("/:id/reviews/:reviewId", updateReviewOfCourse);
-courseRoutes.delete("/:id/reviews/:reviewId", deleteReviewOfCourse);
+  courseRoutes.get("/:id", 
+    /* #swagger.tags = ['Cursos']
+      #swagger.summary = 'Obtener curso por ID'
+      #swagger.description = 'Endpoint para obtener un curso específico por su ID' */
+    getCourseById
+  );
+
+  // Rutas para reviews de cursos específicos
+  courseRoutes.get("/:id/reviews", 
+    /* #swagger.tags = ['Cursos']
+      #swagger.summary = 'Obtener reviews de un curso'
+      #swagger.description = 'Endpoint para obtener todas las reviews de un curso específico' */
+    getReviewsByCourse
+  );
 
 
 export default courseRoutes;

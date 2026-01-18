@@ -2,6 +2,10 @@ import Curso from "../models/courseModel.js";
 import Section from "../models/sectionModel.js";
 import Materia from "../models/subjectModel.js";
 import Docente from "../models/teacherModel.js";
+import ReviewCab from "../models/reviewCab.js";
+import ReviewCont from "../models/reviewCont.js";
+import Alumno from "../models/studentModel.js";
+import Aspecto from "../models/aspectModel.js";
 
 // Helper para construir los includes comunes
 const getCourseIncludes = () => {
@@ -67,54 +71,54 @@ const getCourseById = async (req, res) => {
   }
 };
 
-const createCourse = async (req, res) => {
+const getReviewsByCourse = async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const { seccion, year, periodo } = req.body;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
 
-    if (!seccion || !year || !periodo) {
-      return res.status(400).json({
-        error: "Se requieren los campos: seccion, year, periodo",
-      });
+    const course = await Curso.findByPk(id);
+
+    if (!course) {
+      return res.status(404).json({ error: "El curso no existe" });
     }
 
-    // Validar que la sección existe
-    const sectionExists = await Section.findByPk(seccion);
-    if (!sectionExists) {
-      return res.status(404).json({ error: "La sección no existe" });
-    }
-
-    // Validar curso duplicado
-    const courseExistente = await Curso.findOne({
-      where: { seccion, year, periodo },
-    });
-    if (courseExistente) {
-      return res.status(400).json({
-        error: "Ya existe un curso con esa sección, año y período",
-      });
-    }
-
-    const course = await Curso.create({
-      seccion,
-      year,
-      periodo,
+    const reviews = await ReviewCab.findAndCountAll({
+        where: { curso: id },
+        include: [
+            {
+                model: ReviewCont,
+                include: [
+                    {
+                        model: Aspecto,
+                    },
+                ],
+            },
+            {
+                model: Alumno,
+            },
+        ],
+        limit,
+        offset,
     });
 
-    const courseDetailed = await Curso.findByPk(course.id, {
-      include: getCourseIncludes(),
-    });
-
-    return res.status(201).json({
-      message: "Curso creado exitosamente",
-      curso: courseDetailed,
+    return res.status(200).json({
+      total: reviews.count,
+      totalPages: Math.ceil(reviews.count / limit),
+      currentPage: page,
+      limit,
+      reviews: reviews.rows,
     });
   } catch (error) {
-    console.error("Error al crear el curso:", error);
-    res.status(500).json({ error: "Error al crear el curso" });
+    console.error("Error al obtener las reviews del curso:", error);
+    res.status(500).json({ error: "Error al obtener las reviews del curso" });
   }
-};
+}
 
 export {
   getAllCourses,
   getCourseById,
-  createCourse,
+  getReviewsByCourse,
 };
