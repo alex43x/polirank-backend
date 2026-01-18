@@ -1,12 +1,13 @@
 import Materia from "../models/subjectModel.js";
-import Intentos from "../models/triesModel.js";
+import Intento from "../models/triesModel.js";
 import Alumno from "../models/studentModel.js";
 import { Op } from "sequelize";
 
 const getAllTries = async (req, res) => {
+    const usuario = req.user;
     try {
 
-    const tries = await Intentos.findAndCountAll({
+    const tries = await Intento.findAndCountAll({
         order: [["id", "ASC"]],
         include: [
         {
@@ -17,6 +18,14 @@ const getAllTries = async (req, res) => {
         }
         ],
     });
+
+    if (!tries) {
+        return res.status(404).json({ error: "No se encontraron intentos" });
+    }
+
+    if (usuario.role.nombre !== 'ADMIN') {
+      return res.status(403).json({ error: "No tienes permisos para los intentos" });
+    }
 
     return res.json({
         total: tries.count,
@@ -30,11 +39,16 @@ const getAllTries = async (req, res) => {
 
 const getTrybyId = async (req, res) => {
     const { id } = req.params;
+    const usuario = req.user;
 
     try {
-        const tryInstance = await Tries.findByPk(id);
+        const tryInstance = await Intento.findByPk(id);
     if (!tryInstance) {
       return res.status(404).json({ error: "Intento no encontrado" });
+    }
+
+    if (tryInstance.alumno !== usuario.id) {
+      return res.status(403).json({ error: "No tienes permisos para ver este intento" });
     }
 
     return res.status(200).json(tryInstance);
@@ -59,7 +73,7 @@ const createTry = async (req, res) => {
     }
 
     try {
-        const newTry = await Intentos.create({
+        const newTry = await Intento.create({
         alumno,
         asignatura,
         valor,
@@ -74,18 +88,21 @@ const createTry = async (req, res) => {
 
 const updateTry = async (req, res) => {
   const { id } = req.params;
-  const alumno = req.user;
+  const usuario = req.user;
   const { asignatura, valor } = req.body;
 
   try {
-    const tryInstance = await Intentos.findByPk(id);
+    const tryInstance = await Intento.findByPk(id);
 
     if (!tryInstance) {
       return res.status(404).json({ error: "Intento no encontrado" });
     }
 
+    if (tryInstance.alumno !== usuario.id) {
+      return res.status(403).json({ error: "No tienes permisos para actualizar este intento" });
+    }
+
     await tryInstance.update({
-      alumno,
       asignatura,
       valor,
     });
@@ -99,11 +116,17 @@ const updateTry = async (req, res) => {
 
 const deleteTry = async (req, res) => {
   const { id } = req.params;
+  const usuario = req.user;
+  
   try {
-    const tryInstance = await Intentos.findByPk(id);
+    const tryInstance = await Intento.findByPk(id);
 
     if (!tryInstance) {
       return res.status(404).json({ error: "Intento no encontrado" });
+    }
+
+    if (tryInstance.alumno !== usuario.id) {
+      return res.status(403).json({ error: "No tienes permisos para eliminar este intento" });
     }
 
     await tryInstance.destroy();

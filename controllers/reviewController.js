@@ -48,7 +48,12 @@ const getReviewIncludes = (filters = {}) => {
 
 // Obtener reviews con filtros flexibles 
 const getAllReviews = async (req, res) => {
+  const usuario = req.user;
+
   try {
+    if (usuario.rol.nombre !== "ADMIN") {
+      return res.status(403).json({ error: "No tienes permiso para ver los reviews" });
+    }
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
@@ -168,6 +173,7 @@ const createReview = async (req, res) => {
 const getReviewById = async (req, res) => {
   try {
     const { id } = req.params;
+    const usuarioId = req.user.id;
 
     const review = await ReviewCab.findByPk(id, {
       include: getReviewIncludes(),
@@ -177,97 +183,16 @@ const getReviewById = async (req, res) => {
       return res.status(404).json({ error: "Review no encontrado" });
     }
 
+    if (req.user.rol.nombre !== "ADMIN" && review.alumno !== usuarioId) {
+      return res.status(403).json({
+        error: "No tienes permiso para ver este review",
+      });
+    }
+
     return res.status(200).json(review);
   } catch (error) {
     console.error("Error al obtener el review:", error);
     res.status(500).json({ error: "Error al obtener el review" });
-  }
-};
-
-// Actualizar review de un curso específico
-const updateReviewOfCourse = async (req, res) => {
-  try {
-    const { id, reviewId } = req.params;
-    const { aspectos } = req.body;
-    const usuarioId = req.user.id;
-
-    // Validar que el curso existe
-    const courseExists = await Course.findByPk(id);
-    if (!courseExists) {
-      return res.status(404).json({ error: "El curso no existe" });
-    }
-
-    const review = await ReviewCab.findByPk(reviewId);
-
-    if (!review) {
-      return res.status(404).json({ error: "Review no encontrado" });
-    }
-
-    // Verificar que la review pertenece al curso
-    if (review.curso !== parseInt(id)) {
-      return res.status(404).json({ error: "La review no pertenece a este curso" });
-    }
-
-    if (review.alumno !== usuarioId) {
-      return res.status(403).json({
-        error: "No tienes permiso para actualizar este review",
-      });
-    }
-
-    if (aspectos) {
-      if (!Array.isArray(aspectos) || aspectos.length === 0) {
-        return res.status(400).json({
-          error: "Debe proporcionar al menos un aspecto",
-        });
-      }
-
-      // Validar aspectos
-      for (const aspecto of aspectos) {
-        if (!aspecto.aspecto || aspecto.valor === undefined) {
-          return res.status(400).json({
-            error: "Cada aspecto debe tener id y valor",
-          });
-        }
-
-        if (aspecto.valor < 1 || aspecto.valor > 5) {
-          return res.status(400).json({
-            error: "El valor de cada aspecto debe estar entre 1 y 5",
-          });
-        }
-
-        const aspectoExists = await Aspecto.findByPk(aspecto.aspecto);
-        if (!aspectoExists) {
-          return res.status(404).json({
-            error: `El aspecto con id ${aspecto.aspecto} no existe`,
-          });
-        }
-      }
-
-      // Eliminar y recrear detalles
-      await ReviewCont.destroy({ where: { revcab: reviewId } });
-
-      await Promise.all(
-        aspectos.map((aspecto) =>
-          ReviewCont.create({
-            revcab: reviewId,
-            aspecto: aspecto.aspecto,
-            valor: aspecto.valor,
-          })
-        )
-      );
-    }
-
-    const reviewActualizado = await ReviewCab.findByPk(reviewId, {
-      include: getReviewIncludes(),
-    });
-
-    return res.status(200).json({
-      message: "Review actualizado exitosamente",
-      review: reviewActualizado,
-    });
-  } catch (error) {
-    console.error("Error al actualizar el review:", error);
-    res.status(500).json({ error: "Error al actualizar el review" });
   }
 };
 
@@ -360,7 +285,7 @@ const deleteReview = async (req, res) => {
       return res.status(404).json({ error: "Review no encontrado" });
     }
 
-    if (review.alumno !== usuarioId && usuarioRol !== "ADMIN") {
+    if (review.alumno !== usuarioId) {
       return res.status(403).json({
         error: "No tienes permiso para eliminar este review",
       });
@@ -384,5 +309,4 @@ export {
   getReviewById,
   updateReview,
   deleteReview,
-  updateReviewOfCourse,
 };
