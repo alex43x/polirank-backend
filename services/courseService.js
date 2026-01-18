@@ -15,14 +15,7 @@ const getLastCourseBySection = (seccionId) => {
 }
 
 const getCourseAverage = async (courseId) => {
-    const stats = await Stats.findAndCountAll({
-        where: { curso: courseId },
-        include: [
-            {
-                model: Aspecto,
-            },
-        ],
-    });
+    const stats = await getStatsByCourse(courseId);
 
     const sum = stats.rows.reduce((acc, stat) => acc + parseFloat(stat.promedio), 0);
     const result = stats.count > 0 ? (sum / stats.count).toFixed(2) : 0;
@@ -36,4 +29,16 @@ const totalReviewsForCourse = async (courseId) => {
     return count;
 }
 
-export { getLastCourseBySection, getCourseAverage, totalReviewsForCourse };
+const getStatsByCourse = async (courseId) => {
+    const stats = await Stats.findAndCountAll({
+        where: { curso: courseId },
+        include: [
+            {
+                model: Aspecto,
+            },
+        ],
+    });
+    return stats;
+}
+
+export { getLastCourseBySection, getCourseAverage, totalReviewsForCourse, getStatsByCourse };
