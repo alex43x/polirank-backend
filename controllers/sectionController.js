@@ -74,4 +74,23 @@ const getSectionHistoryStats = async (req, res) => {
     }
 };
 
-export { getSectionLastStats, getSectionHistoryStats };
+const getCoursesBySection = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const courses = await Curso.findAndCountAll({
+            where: { seccion: id },
+            order: [
+                ['year', 'DESC'],
+                ['periodo', 'DESC']
+            ]
+        });
+
+        return res.status(200).json(courses);
+    } catch (error) {
+        console.error("Error al obtener los cursos de la sección:", error);
+        res.status(500).send("Error al obtener los cursos de la sección");
+    }
+}
+
+export { getSectionLastStats, getSectionHistoryStats, getCoursesBySection };
