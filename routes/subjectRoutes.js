@@ -5,6 +5,6 @@ const subjectRoutes = express.Router();
 
 subjectRoutes.get("/", subjectController.getAllSubjects);
 subjectRoutes.get("/:id", subjectController.getSubjectbyId);
-subjectRoutes.get("/:id/secciones", subjectController.getSectionsBySubjectId);
+subjectRoutes.get("/:id/secciones", subjectController.getSectionsStatsBySubjectId);
 
 export default subjectRoutes;

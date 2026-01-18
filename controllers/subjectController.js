@@ -4,7 +4,7 @@ import Malla from "../models/curriculumModel.js";
 import Docente from "../models/teacherModel.js";
 import Departamento from "../models/departmentModel.js";
 import { Op } from "sequelize";
-
+import { getLastCourseBySection, getCourseAverage, totalReviewsForCourse } from "../services/courseService.js";
 
 // Helper para obtener IDs de asignaturas basado en mallas curriculares
 const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
@@ -27,7 +27,7 @@ const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
   if (mallas.count === 0) {
     return null;
   }
-  
+
   const subjectIds = mallas.rows.map((malla) => malla.asignatura);
   return subjectIds;
 };
@@ -61,11 +61,11 @@ const getAllSubjects = async (req, res) => {
         // ADMIN puede ver todas las materias
         if (career_id || semester) {
           const subjectIds = await getSubjectIdsByCurriculum(career_id, semester);
-          
+
           if (!subjectIds) {
             return res.json("No subjects available for this user");
           }
-          
+
           whereConditions.id = { [Op.in]: subjectIds };
         }
 
@@ -74,7 +74,7 @@ const getAllSubjects = async (req, res) => {
       case "STUDENT":
         // STUDENT solo puede ver las materias de su carrera
         const subjectIds = await getSubjectIdsByCurriculum(
-          currentUser.carrera.id, 
+          currentUser.carrera.id,
           semester
         );
 
@@ -207,8 +207,44 @@ const getSectionsBySubjectId = async (req, res) => {
   }
 };
 
+const getSectionsStatsBySubjectId = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const sections = await Section.findAll({
+        where: { asignatura: id },
+        include: [{ model: Docente }],
+      });
+
+    const sectionsWithAverage = [];
+
+    for (const section of sections) {
+      const lastCurso = await getLastCourseBySection(section.id);
+      if (!lastCurso) continue;
+
+      const average = await getCourseAverage(lastCurso.id);
+      const totalReviews = await totalReviewsForCourse(lastCurso.id);
+
+      sectionsWithAverage.push({
+        section,
+        lastCurso,
+        totalReviews,
+        promedioGeneral: average.result,
+      });
+    }
+
+    sectionsWithAverage.sort((a, b) => b.promedioGeneral - a.promedioGeneral);
+    return res.status(200).json(sectionsWithAverage);
+
+  } catch (error) {
+    console.error("Error al obtener las estadísticas de secciones:", error);
+    res.status(500).send("Error al obtener las estadísticas de secciones");
+  }
+};
+
 export default {
   getAllSubjects,
   getSubjectbyId,
   getSectionsBySubjectId,
+  getSectionsStatsBySubjectId,
 };
