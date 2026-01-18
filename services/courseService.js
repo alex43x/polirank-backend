@@ -1,0 +1,39 @@
+import { Model } from 'sequelize';
+import Curso from '../models/courseModel.js';
+import Stats from '../models/statsModel.js';
+import Aspecto from '../models/aspectModel.js';
+import ReviewCab from '../models/reviewCab.js';
+
+const getLastCourseBySection = (seccionId) => {
+    return Curso.findOne({
+        where: { seccion: seccionId },
+        order: [
+        ['year', 'DESC'],
+        ['periodo', 'DESC']
+        ]
+    });
+}
+
+const getCourseAverage = async (courseId) => {
+    const stats = await Stats.findAndCountAll({
+        where: { curso: courseId },
+        include: [
+            {
+                model: Aspecto,
+            },
+        ],
+    });
+
+    const sum = stats.rows.reduce((acc, stat) => acc + parseFloat(stat.promedio), 0);
+    const result = stats.count > 0 ? (sum / stats.count).toFixed(2) : 0;
+    return result === 'NaN' ? { result: 0 } : { result }; 
+};
+
+const totalReviewsForCourse = async (courseId) => {
+    const count = await ReviewCab.count({
+        where: { curso: courseId },
+    });
+    return count;
+}
+
+export { getLastCourseBySection, getCourseAverage, totalReviewsForCourse };
