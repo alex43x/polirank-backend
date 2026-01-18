@@ -52,14 +52,17 @@ const getSectionHistoryStats = async (req, res) => {
         where: { seccion: id },
         });
 
-        const cursosStats = [];
+        const courseStats = [];
 
         for (const curso of cursos.rows) {
             const stats = await getStatsByCourse(curso.id);
             const average = await getCourseAverage(curso.id);
-            cursosStats.push({ curso, count: cursos.count, stats,  promedioGeneral: average.result });
+            courseStats.push({ curso, stats,  promedioGeneral: average.result });
         }
-        return res.status(200).json(cursosStats);
+
+        const totalAverage = courseStats.reduce((acc, c) => acc + parseFloat(c.promedioGeneral), 0) / cursos.count;
+
+        return res.status(200).json({ count: cursos.count, courseStats, totalPromedio: totalAverage });
     } catch (error) {
         console.error(
         "Error al obtener el historial de estadísticas de la sección:",
