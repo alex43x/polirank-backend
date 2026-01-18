@@ -23,7 +23,11 @@
     },
     "/auth/login": {
       "post": {
-        "description": "",
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Iniciar sesión",
+        "description": "Endpoint para autenticar un usuario y obtener un token",
         "responses": {
           "200": {
             "description": "OK"
@@ -56,7 +60,11 @@
     },
     "/auth/profile": {
       "get": {
-        "description": "",
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Obtener perfil de usuario",
+        "description": "Endpoint para obtener el perfil del usuario autenticado",
         "responses": {
           "200": {
             "description": "OK"
@@ -67,12 +75,21 @@
           "500": {
             "description": "Internal Server Error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/alumnos/": {
       "get": {
-        "description": "",
+        "tags": [
+          "Alumnos"
+        ],
+        "summary": "Obtener todos los estudiantes",
+        "description": "Endpoint para obtener la lista de todos los estudiantes",
         "parameters": [
           {
             "name": "page",
@@ -120,7 +137,11 @@
         }
       },
       "post": {
-        "description": "",
+        "tags": [
+          "Alumnos"
+        ],
+        "summary": "Crear un nuevo estudiante",
+        "description": "Endpoint para crear un nuevo estudiante",
         "responses": {
           "201": {
             "description": "Created"
@@ -146,6 +167,12 @@
                   },
                   "password": {
                     "example": "any"
+                  },
+                  "carrera": {
+                    "example": "any"
+                  },
+                  "rol": {
+                    "example": "any"
                   }
                 }
               }
@@ -156,7 +183,11 @@
     },
     "/alumnos/{id}": {
       "get": {
-        "description": "",
+        "tags": [
+          "Alumnos"
+        ],
+        "summary": "Obtener estudiante por ID",
+        "description": "Endpoint para obtener un estudiante específico por su ID",
         "parameters": [
           {
             "name": "id",
@@ -180,7 +211,11 @@
         }
       },
       "put": {
-        "description": "",
+        "tags": [
+          "Alumnos"
+        ],
+        "summary": "Actualizar un estudiante",
+        "description": "Endpoint para actualizar la información de un estudiante existente",
         "parameters": [
           {
             "name": "id",
@@ -221,7 +256,11 @@
         }
       },
       "delete": {
-        "description": "",
+        "tags": [
+          "Alumnos"
+        ],
+        "summary": "Eliminar un estudiante",
+        "description": "Endpoint para eliminar un estudiante existente",
         "parameters": [
           {
             "name": "id",
@@ -247,7 +286,11 @@
     },
     "/alumnos/{id}/reviews": {
       "get": {
-        "description": "",
+        "tags": [
+          "Alumnos"
+        ],
+        "summary": "Obtener reviews de un estudiante",
+        "description": "Endpoint para obtener todas las reviews creadas por un estudiante",
         "parameters": [
           {
             "name": "id",
@@ -273,7 +316,11 @@
     },
     "/materias/": {
       "get": {
-        "description": "",
+        "tags": [
+          "Materias"
+        ],
+        "summary": "Obtener todas las materias",
+        "description": "Endpoint para obtener la lista de todas las materias",
         "parameters": [
           {
             "name": "page",
@@ -330,7 +377,11 @@
     },
     "/materias/{id}": {
       "get": {
-        "description": "",
+        "tags": [
+          "Materias"
+        ],
+        "summary": "Obtener materia por ID",
+        "description": "Endpoint para obtener una materia específica por su ID",
         "parameters": [
           {
             "name": "id",
@@ -345,6 +396,9 @@
           "200": {
             "description": "OK"
           },
+          "403": {
+            "description": "Forbidden"
+          },
           "404": {
             "description": "Not Found"
           },
@@ -356,7 +410,11 @@
     },
     "/materias/{id}/secciones": {
       "get": {
-        "description": "",
+        "tags": [
+          "Materias"
+        ],
+        "summary": "Obtener estadísticas de secciones de una materia",
+        "description": "Endpoint para obtener las estadísticas de las secciones de una materia específica",
         "parameters": [
           {
             "name": "id",
@@ -379,7 +437,11 @@
     },
     "/cursos/": {
       "get": {
-        "description": "",
+        "tags": [
+          "Cursos"
+        ],
+        "summary": "Obtener todos los cursos",
+        "description": "Endpoint para obtener la lista de todos los cursos",
         "parameters": [
           {
             "name": "page",
@@ -404,48 +466,15 @@
             "description": "Internal Server Error"
           }
         }
-      },
-      "post": {
-        "description": "",
-        "responses": {
-          "201": {
-            "description": "Created"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "seccion": {
-                    "example": "any"
-                  },
-                  "year": {
-                    "example": "any"
-                  },
-                  "periodo": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/cursos/{id}": {
       "get": {
-        "description": "",
+        "tags": [
+          "Cursos"
+        ],
+        "summary": "Obtener curso por ID",
+        "description": "Endpoint para obtener un curso específico por su ID",
         "parameters": [
           {
             "name": "id",
@@ -471,26 +500,16 @@
     },
     "/cursos/{id}/reviews": {
       "get": {
-        "description": "",
+        "tags": [
+          "Cursos"
+        ],
+        "summary": "Obtener reviews de un curso",
+        "description": "Endpoint para obtener todas las reviews de un curso específico",
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -507,9 +526,15 @@
             "description": "Internal Server Error"
           }
         }
-      },
-      "post": {
-        "description": "",
+      }
+    },
+    "/sections/{id}/last": {
+      "get": {
+        "tags": [
+          "Secciones"
+        ],
+        "summary": "Obtener últimas estadísticas de sección",
+        "description": "Endpoint para obtener las estadísticas más recientes de una sección",
         "parameters": [
           {
             "name": "id",
@@ -520,6 +545,139 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/sections/{id}/history": {
+      "get": {
+        "tags": [
+          "Secciones"
+        ],
+        "summary": "Obtener historial de estadísticas de sección",
+        "description": "Endpoint para obtener el historial de estadísticas de una sección",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/sections/{id}/cursos": {
+      "get": {
+        "tags": [
+          "Secciones"
+        ],
+        "summary": "Obtener cursos de sección",
+        "description": "Endpoint para obtener todos los cursos pertenecientes a una sección específica",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/reviews/": {
+      "get": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Obtener todas las reviews",
+        "description": "Endpoint para obtener la lista de todas las reviews",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "docente",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "curso",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "materia",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "alumno",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Crear una nueva review",
+        "description": "Endpoint para crear una nueva review",
         "responses": {
           "201": {
             "description": "Created"
@@ -543,6 +701,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "curso": {
+                    "example": "any"
+                  },
                   "aspectos": {
                     "example": "any"
                   }
@@ -553,100 +714,16 @@
         }
       }
     },
-    "/cursos/{id}/reviews/last": {
+    "/reviews/{id}": {
       "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "teacherId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subjectId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
+        "tags": [
+          "Reviews"
         ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/cursos/{id}/reviews/history": {
-      "get": {
-        "description": "",
+        "summary": "Obtener review por ID",
+        "description": "Endpoint para obtener una review específica por su ID",
         "parameters": [
           {
             "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "teacherId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "subjectId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "404": {
-            "description": "Not Found"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
-    "/cursos/{id}/reviews/{reviewId}": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "reviewId",
             "in": "path",
             "required": true,
             "schema": {
@@ -667,18 +744,14 @@
         }
       },
       "put": {
-        "description": "",
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Actualizar una review",
+        "description": "Endpoint para actualizar una review existente",
         "parameters": [
           {
             "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "reviewId",
             "in": "path",
             "required": true,
             "schema": {
@@ -719,18 +792,14 @@
         }
       },
       "delete": {
-        "description": "",
+        "tags": [
+          "Reviews"
+        ],
+        "summary": "Eliminar una review",
+        "description": "Endpoint para eliminar una review existente",
         "parameters": [
           {
             "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "reviewId",
             "in": "path",
             "required": true,
             "schema": {
@@ -756,7 +825,11 @@
     },
     "/intentos/": {
       "get": {
-        "description": "",
+        "tags": [
+          "Intentos"
+        ],
+        "summary": "Obtener todos los intentos",
+        "description": "Endpoint para obtener la lista de todos los intentos",
         "responses": {
           "200": {
             "description": "OK"
@@ -767,7 +840,11 @@
         }
       },
       "post": {
-        "description": "",
+        "tags": [
+          "Intentos"
+        ],
+        "summary": "Crear un nuevo intento",
+        "description": "Endpoint para crear un nuevo intento",
         "responses": {
           "201": {
             "description": "Created"
@@ -803,7 +880,11 @@
     },
     "/intentos/{id}": {
       "get": {
-        "description": "",
+        "tags": [
+          "Intentos"
+        ],
+        "summary": "Obtener intento por ID",
+        "description": "Endpoint para obtener un intento específico por su ID",
         "parameters": [
           {
             "name": "id",
@@ -827,7 +908,11 @@
         }
       },
       "put": {
-        "description": "",
+        "tags": [
+          "Intentos"
+        ],
+        "summary": "Actualizar un intento",
+        "description": "Endpoint para actualizar un intento existente",
         "parameters": [
           {
             "name": "id",
@@ -868,7 +953,11 @@
         }
       },
       "delete": {
-        "description": "",
+        "tags": [
+          "Intentos"
+        ],
+        "summary": "Eliminar un intento",
+        "description": "Endpoint para eliminar un intento existente",
         "parameters": [
           {
             "name": "id",
