@@ -86,7 +86,7 @@ const getCoursesBySection = async (req, res) => {
             ]
         });
 
-        return res.status(200).json(courses);
+        return res.status(200).json({ cursos: courses.rows, count: courses.count });
     } catch (error) {
         console.error("Error al obtener los cursos de la sección:", error);
         res.status(500).send("Error al obtener los cursos de la sección");

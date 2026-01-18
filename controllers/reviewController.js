@@ -102,7 +102,7 @@ const createReview = async (req, res) => {
     }
 
     // Validar curso existe
-    const courseExists = await Course.findByPk(curso);
+    const courseExists = await Curso.findByPk(curso);
     if (!courseExists) {
       return res.status(404).json({ error: "El curso no existe" });
     }
