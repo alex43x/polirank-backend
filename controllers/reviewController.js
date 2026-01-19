@@ -244,8 +244,24 @@ const updateReview = async (req, res) => {
         }
       }
 
-      // Eliminar y recrear detalles
-      await ReviewCont.destroy({ where: { revcab: id } });
+      for (const a of aspectos) {
+        const updatedRows = await ReviewCont.update(
+          { valor: a.valor },
+          {
+            where: {
+              revcab: id,
+              aspecto: a.aspecto,
+            },
+          }
+        );
+
+        // update devuelve: [cantidadDeFilasActualizadas]
+        if (updatedRows[0] === 0) {
+          return res.status(404).json({
+            error: `El aspecto ${a.aspecto} no existe en este review`,
+          });
+        }
+      }
 
       await Promise.all(
         aspectos.map((aspecto) =>
