@@ -26,14 +26,17 @@ const getSectionLastStats = async (req, res) => {
         .json({ message: "No hay cursos disponibles para esta sección" });
     }
 
-    const stats = await getStatsByCourse(lastCurso.id);
-
-    const average = await getCourseAverage(lastCurso.id);
+    const [stats, average, totalReviews] = await Promise.all([
+      getStatsByCourse(lastCurso.id),
+      getCourseAverage(lastCurso.id),
+      totalReviewsForCourse(lastCurso.id),
+    ]);
 
     const response = {
       course: lastCurso,
       stats,
       promedioGeneral: average.result,
+      totalReviews
     };
 
     return res.status(200).json(response);
@@ -44,53 +47,58 @@ const getSectionLastStats = async (req, res) => {
 };
 
 const getSectionHistoryStats = async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
 
-    try {
-        const cursos = await Curso.findAndCountAll({
-        where: { seccion: id },
-        });
+  try {
+    const cursos = await Curso.findAndCountAll({
+      where: { seccion: id },
+    });
 
-        const courseStats = [];
 
-        for (const curso of cursos.rows) {
-            const stats = await getStatsByCourse(curso.id);
-            const average = await getCourseAverage(curso.id);
-            courseStats.push({ curso, stats,  promedioGeneral: average.result });
-        }
 
-        const totalAverage = courseStats.reduce((acc, c) => acc + parseFloat(c.promedioGeneral), 0) / cursos.count;
+    const courseStatsPromises = cursos.rows.map(async (curso) => {
+      const [stats, average, totalReviews] = await Promise.all([
+        getStatsByCourse(curso.id),
+        getCourseAverage(curso.id),
+        totalReviewsForCourse(curso.id),
+      ]);
+      return { curso, stats, promedioGeneral: average.result, totalReviews };
+    });
 
-        return res.status(200).json({ count: cursos.count, courseStats, totalPromedio: totalAverage });
-    } catch (error) {
-        console.error(
-        "Error al obtener el historial de estadísticas de la sección:",
-        error,
-        );
-        res
-        .status(500)
-        .send("Error al obtener el historial de estadísticas de la sección");
-    }
+    const courseStats = await Promise.all(courseStatsPromises);
+
+    const totalAverage = courseStats.reduce((acc, c) => acc + parseFloat(c.promedioGeneral), 0) / cursos.count;
+
+    return res.status(200).json({ count: cursos.count, courseStats, totalPromedio: totalAverage });
+  } catch (error) {
+    console.error(
+      "Error al obtener el historial de estadísticas de la sección:",
+      error,
+    );
+    res
+      .status(500)
+      .send("Error al obtener el historial de estadísticas de la sección");
+  }
 };
 
 const getCoursesBySection = async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    try {
-        const courses = await Curso.findAndCountAll({
-            where: { seccion: id },
-            order: [
-                ['year', 'DESC'],
-                ['periodo', 'DESC']
-            ]
-        });
+  try {
+    const courses = await Curso.findAndCountAll({
+      where: { seccion: id },
+      order: [
+        ['year', 'DESC'],
+        ['periodo', 'DESC']
+      ]
+    });
 
-        return res.status(200).json({ cursos: courses.rows, count: courses.count });
-    } catch (error) {
-        console.error("Error al obtener los cursos de la sección:", error);
-        res.status(500).send("Error al obtener los cursos de la sección");
-    }
+    return res.status(200).json({ cursos: courses.rows, count: courses.count });
+  } catch (error) {
+    console.error("Error al obtener los cursos de la sección:", error);
+    res.status(500).send("Error al obtener los cursos de la sección");
+  }
 }
 
 export { getSectionLastStats, getSectionHistoryStats, getCoursesBySection };

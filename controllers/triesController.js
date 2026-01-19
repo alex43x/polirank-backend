@@ -23,7 +23,7 @@ const getAllTries = async (req, res) => {
         return res.status(404).json({ error: "No se encontraron intentos" });
     }
 
-    if (usuario.role.nombre !== 'ADMIN') {
+    if (usuario.rol.nombre !== 'ADMIN') {
       return res.status(403).json({ error: "No tienes permisos para los intentos" });
     }
 
