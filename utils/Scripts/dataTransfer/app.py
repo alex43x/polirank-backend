@@ -145,6 +145,7 @@ def menu_principal():
             
             ARCHIVO = seleccion_archivo()
             if not ARCHIVO: continue 
+            
             HOJA = obtener_nombre_hoja(ARCHIVO)
             
            
