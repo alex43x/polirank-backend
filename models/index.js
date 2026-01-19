@@ -12,6 +12,7 @@ import Malla from "./curriculumModel.js";
 import ReviewCab from "./reviewCab.js";
 import ReviewCont from "./reviewCont.js";
 import Departamento from "./departmentModel.js";
+import Estadistica from "./statsModel.js";
 
 // Definir relaciones: Alumno - Rol
 Alumno.belongsTo(Rol, { foreignKey: 'rol' });
@@ -55,7 +56,7 @@ ReviewCab.belongsTo(Curso, { foreignKey: "curso"    });
 Curso.hasMany(ReviewCab, { foreignKey: "curso" });
 
 // Definir relaciones: ReviewCab - Alumno
-    ReviewCab.belongsTo(Alumno, { foreignKey: "alumno" });
+ReviewCab.belongsTo(Alumno, { foreignKey: "alumno" });
 Alumno.hasMany(ReviewCab, { foreignKey: "alumno" });
 
 // Definir relaciones: ReviewCont - ReviewCab
@@ -70,4 +71,14 @@ Aspecto.hasMany(ReviewCont, { foreignKey: "aspecto" });
 Materia.belongsTo(Departamento, {foreignKey: 'depto'});
 Departamento.hasMany(Materia, {foreignKey: 'depto'});
 
-export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, sequelize };
+// Definir relaciones: Estadistica - Curso
+Estadistica.belongsTo(Curso, { foreignKey: "curso" });
+Curso.hasMany(Estadistica, { foreignKey: "curso" });
+
+// Definir relaciones: Estadistica - Aspecto
+Estadistica.belongsTo(Aspecto, { foreignKey: "aspecto" });
+Aspecto.hasMany(Estadistica, { foreignKey: "aspecto" });
+
+
+
+export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, Estadistica, sequelize };

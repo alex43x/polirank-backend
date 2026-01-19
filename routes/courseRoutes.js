@@ -2,33 +2,63 @@ import express from "express";
 import {
   getAllCourses,
   getCourseById,
-  createCourse,
-} from "../controllers/courseController.js";
-import {
   getReviewsByCourse,
-  createReviewForCourse,
-  getReviewOfCourse,
-  updateReviewOfCourse,
-  deleteReviewOfCourse,
-  getReviewStats,
-  lastReviewStats
-} from "../controllers/reviewController.js";
+} from "../controllers/courseController.js";
 
 const courseRoutes = express.Router();
 
-// Rutas para cursos
-courseRoutes.get("/", getAllCourses);
-courseRoutes.get("/:id", getCourseById);
-courseRoutes.post("/", createCourse);
+  // Rutas para cursos
+  courseRoutes.get("/", 
+    /* #swagger.tags = ['Cursos']
+      #swagger.summary = 'Obtener todos los cursos'
+      #swagger.description = 'Obtener la lista de todos los cursos. Solo ADMIN puede ver todos los cursos.'
+      #swagger.responses[200] = {
+        description: "Lista de cursos obtenida exitosamente"
+      }
+    */
+    getAllCourses
+  );
 
-// Rutas para reviews de cursos específicos
-courseRoutes.get("/:id/reviews", getReviewsByCourse);
-courseRoutes.post("/:id/reviews", createReviewForCourse);
-courseRoutes.get("/:id/reviews/last", lastReviewStats);
-courseRoutes.get("/:id/reviews/history", getReviewStats);
-courseRoutes.get("/:id/reviews/:reviewId", getReviewOfCourse);
-courseRoutes.put("/:id/reviews/:reviewId", updateReviewOfCourse);
-courseRoutes.delete("/:id/reviews/:reviewId", deleteReviewOfCourse);
+  courseRoutes.get("/:id", 
+    /* #swagger.tags = ['Cursos']
+      #swagger.summary = 'Obtener curso por ID'
+      #swagger.description = 'Obtener un curso específico por su ID. Solo ADMIN puede ver la información de cursos.'
+      #swagger.parameters['id'] = {
+        in: 'path',
+        description: 'ID del curso',
+        required: true,
+        type: 'integer'
+      }
+      #swagger.responses[200] = {
+        description: "Curso obtenido exitosamente"
+      }
+      #swagger.responses[404] = {
+        description: "Curso no encontrado"
+      }
+    */
+    getCourseById
+  );
+
+  // Rutas para reviews de cursos específicos
+  courseRoutes.get("/:id/reviews", 
+    /* #swagger.tags = ['Cursos']
+      #swagger.summary = 'Obtener reviews de un curso'
+      #swagger.description = 'Obtener todas las reviews de un curso específico. Solo ADMIN puede ver las reviews de cualquier curso.'
+      #swagger.parameters['id'] = {
+        in: 'path',
+        description: 'ID del curso',
+        required: true,
+        type: 'integer'
+      }
+      #swagger.responses[200] = {
+        description: "Reviews del curso obtenidas exitosamente"
+      }
+      #swagger.responses[404] = {
+        description: "Curso no encontrado o sin reviews"
+      }
+    */
+    getReviewsByCourse
+  );
 
 
 export default courseRoutes;
