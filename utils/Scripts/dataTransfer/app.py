@@ -7,7 +7,7 @@ from functions.appendDocs import insertDoc
 from functions.appendAsign import insertAsign
 from functions.appendSeccCur import insertSecciones
 from functions.searchUsers import usersImport
-from functions.appendMalla import insertMalla
+from functions.appendmalla import insertMalla
 # Cargar variables de entorno desde el archivo .env en la raíz del proyecto
 env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), '.env')
 load_dotenv(env_path)
@@ -155,7 +155,6 @@ def menu_principal():
             COLUMNAS_OBJETIVO = [0,1,2] 
             
             intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
-            '''mostrardatos(intoData)'''
             
             insertMalla(connection,intoData)
 
@@ -181,11 +180,10 @@ def obtener_configuracion_db():
     """
     # Variables requeridas
     required_vars = {
-        'host': os.getenv('DB_HOST'),
-        'user': os.getenv('DB_USER'),
-        'password': os.getenv('DB_PASSWORD'),
-        'database': os.getenv('DB_NAME'),
-        'schema': os.getenv('DB_SCHEMA')
+        'host': os.getenv('PG_HOST'),
+        'user': os.getenv('PG_USER'),
+        'password': os.getenv('PG_PASSWORD'),
+        'database': os.getenv('PG_DATABASE'),
     }
     
     # Verificar que todas las variables requeridas estén presentes
@@ -200,7 +198,7 @@ def obtener_configuracion_db():
         return None
     
     # Puerto es opcional, por defecto 5432
-    port = os.getenv('DB_PORT', '5432')
+    port = os.getenv('PG_PORT', '5432')
     
     return {
         'host': required_vars['host'],
@@ -208,7 +206,6 @@ def obtener_configuracion_db():
         'password': required_vars['password'],
         'database': required_vars['database'],
         'port': port,
-        'options': f"-c search_path={required_vars['schema']}"
     }
 
 
