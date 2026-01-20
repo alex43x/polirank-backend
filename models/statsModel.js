@@ -20,7 +20,7 @@ const Estadistica = sequelize.define(
             field: "aspecto"
         },
         promedio:{
-            type:DataTypes.INTEGER,
+            type:DataTypes.FLOAT,
             allowNull: false,
             field: "promedio"
         },
@@ -29,13 +29,19 @@ const Estadistica = sequelize.define(
             allowNull: false,
             field: "cantidad"
         },
-        fecha:{
+        updated_at:{
             type: DataTypes.DATE,
             allowNull: false,
             defaultValue: DataTypes.NOW
         }
     },
     {
+        indexes: [
+            {
+                unique: true,
+                fields: ["curso", "aspecto"]
+            }
+        ],
         tableName: "estadisticas",
         timestamps: false,
     }
