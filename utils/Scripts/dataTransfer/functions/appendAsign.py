@@ -97,10 +97,10 @@ def insertAsign(connection, raw_data):
             # Si ya existe EXACTAMENTE ese nombre en ese Dpto, no hace nada (lo salta).
             # Si el nombre varía un poco ("Base" vs "Bases"), LO INSERTA (Cumple Regla #2).
             query = """
-                INSERT INTO asignaturas (nombre, dpto)
+                INSERT INTO asignaturas (nombre, depto)
                 VALUES %s
-                ON CONFLICT (nombre, dpto) DO NOTHING
-                RETURNING id, nombre, dpto;
+                ON CONFLICT (nombre, depto) DO NOTHING
+                RETURNING id, nombre, depto;
             """
             
             insertadas = execute_values(cursor, query, datos_a_insertar, fetch=True)
@@ -121,7 +121,7 @@ def insertAsign(connection, raw_data):
             print(f"   {e}")
             import traceback
             traceback.print_exc()
-            print("\n💡 Consejo: Verifica que la tabla 'asignaturas' tenga la constraint única (nombre, dpto)")
+            print("\n💡 Consejo: Verifica que la tabla 'asignaturas' tenga la constraint única (nombre, depto)")
     else:
         print("\n⚠️ No hay datos válidos para insertar.")
 
