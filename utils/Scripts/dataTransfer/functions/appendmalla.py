@@ -44,7 +44,10 @@ def insertMalla(connection,tabla):
 
         nom_asig = str(linea[0]).strip() 
         nom_carrera = str(linea[1]).strip().upper()
-        semestre = linea[2]
+        try:
+            semestre = int(float(linea[2])) if linea[2] is not None else 0
+        except (ValueError, TypeError):
+            semestre = 0
 
         if not nom_asig:
             asignaturas_vacias+=1
@@ -77,7 +80,7 @@ def insertMalla(connection,tabla):
             query = """
                 INSERT INTO malla (carrera, asignatura, semestre)
                 VALUES %s
-                ON CONFLICT DO NOTHING
+                ON CONFLICT (carrera, asignatura, semestre) DO NOTHING
                 RETURNING carrera, asignatura, semestre;
             """
             
