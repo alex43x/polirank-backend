@@ -28,6 +28,12 @@ const Malla = sequelize.define(
   {
     tableName: "malla",
     timestamps: false,
+    indexes: [
+      {
+        unique: true,
+        fields: ["carrera", "asignatura", "semestre"],
+      },
+    ],
   }
 );
 

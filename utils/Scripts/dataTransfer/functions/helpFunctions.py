@@ -49,8 +49,7 @@ def procesar_excel_exacto(archivo, nombre_hoja, indices_columnas, fila_inicio):
             # CORRECCIÓN 3: Quitamos el encabezado de "# Fila"
             '''headers = [f"Col {i}" for i in indices_columnas]
             print(f"\nDatos de '{nombre_hoja}' (Desde fila {fila_inicio}):")
-            print(tabulate(data_final, headers=headers, tablefmt="fancy_grid"))
-            '''
+            print(tabulate(data_final, headers=headers, tablefmt="fancy_grid"))'''
             return data_final
         else:
             print(f"No hay datos a partir de la fila {fila_inicio}")
@@ -409,3 +408,64 @@ def estandarizar_nombre_asignatura(nombre):
     nombre = ' '.join(nombre.split())
 
     return nombre
+
+def extraer_primer_nombre_apellido(full_name):
+    """
+    Extrae el primer nombre y el primer apellido de una cadena.
+    Formato esperado: "NOMBRES APELLIDOS" o "APELLIDOS, NOMBRES"
+    """
+    if not full_name:
+        return "Sin Nombre"
+    
+    # Normalizar espacios y usar Title Case (Primera Letra Mayúscula)
+    full_name = " ".join(full_name.split()).title()
+    
+    if "," in full_name:
+        # Caso: "APELLIDOS, NOMBRES"
+        apellidos, nombres = full_name.split(",", 1)
+        p_nombre = nombres.strip().split()[0] if nombres.strip() else ""
+        p_apellido = apellidos.strip().split()[0] if apellidos.strip() else ""
+        return f"{p_nombre} {p_apellido}".strip()
+    
+    # Caso: "NOMBRES APELLIDOS"
+    partes = full_name.split()
+    if len(partes) < 2:
+        return full_name
+    
+    # Heurística para Paraguay (Frecuentemente 2 nombres y 2 apellidos)
+    # Si hay 4 o más palabras, tomamos la 1ra y la 3ra (Primer Nombre y Primer Apellido)
+    if len(partes) >= 4:
+        # Ejemplo: "Juan Carlos Gomez Perez" -> "Juan Gomez"
+        return f"{partes[0]} {partes[2]}"
+    
+    # Para 2 o 3 palabras, tomamos la 1ra y la 2da
+    # Ejemplo: "Juan Gomez" -> "Juan Gomez"
+    # Ejemplo: "Juan Gomez Perez" -> "Juan Gomez"
+    return f"{partes[0]} {partes[1]}"
+
+def generar_password_complejo(longitud=12):
+    """
+    Genera una contraseña aleatoria compleja.
+    """
+    import string
+    import random
+    
+    # Caracteres a utilizar (evitamos caracteres ambiguos como l, I, O, 0 si fuera necesario, 
+    # pero para 'compleja' usaremos el set completo estándar)
+    caracteres = string.ascii_letters + string.digits + "!@#$%^&*"
+    
+    # Aseguramos que tenga al menos uno de cada tipo
+    password = [
+        random.choice(string.ascii_uppercase),
+        random.choice(string.ascii_lowercase),
+        random.choice(string.digits),
+        random.choice("!@#$%^&*")
+    ]
+    
+    # Completamos la longitud deseada
+    password += [random.choice(caracteres) for _ in range(longitud - 4)]
+    
+    # Mezclamos para que no sigan el orden de inserción inicial
+    random.shuffle(password)
+    
+    return "".join(password)
