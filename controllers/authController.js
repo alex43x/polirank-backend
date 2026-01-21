@@ -115,20 +115,8 @@ const createPassword = async (req, res) => {
       include: [{ model: Rol }, { model: Carrera }],
     });
 
-    const token = jwt.sign(
-      {
-        id: updatedStudent.id,
-        correo: updatedStudent.correo,
-        rol: updatedStudent.Rol,
-        carrera: updatedStudent.Carrera,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN },
-    );
-
     res.status(200).json({
       status: "success",
-      token,
       data: { student: updatedStudent },
     });
   } catch (error) {
