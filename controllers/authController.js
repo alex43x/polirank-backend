@@ -86,6 +86,10 @@ const createPassword = async (req, res) => {
   try {
     const { correo, newPassword } = req.body;
 
+    if (!newPassword || newPassword.trim().length < 6) {
+      return res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres" });
+    }
+
     const [student, rol] = await Promise.all([
       Alumno.findOne({
         where: { correo },

@@ -26,6 +26,9 @@ const Alumno = sequelize.define(
     password: {
       type: DataTypes.TEXT,
       allowNull: false,
+      validate: {
+        notEmpty: true,
+      },
     },
     rol: {
       type: DataTypes.INTEGER,
