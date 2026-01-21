@@ -113,4 +113,35 @@ router.get("/profile", authMiddleware,
   authController.getUserProfile
 );
 
+router.post("/create-password",
+  /* #swagger.tags = ['Auth']
+      #swagger.summary = 'Crear contraseña'
+      #swagger.description = 'Crear una nueva contraseña para un usuario inactivo.'
+      #swagger.security = []
+      #swagger.requestBody = {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              required: ["correo", "newPassword"],
+              properties: {
+                correo: {
+                  type: "string",
+                  format: "email",
+                  example: "estudiante@example.com"
+                },
+                newPassword: {
+                  type: "string",
+                  format: "password",
+                  example: "nuevaPassword123"
+                }
+              }
+            }
+          }
+        }
+      }
+  */
+  authController.createPassword
+);
 export default router;
