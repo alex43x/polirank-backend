@@ -443,29 +443,3 @@ def extraer_primer_nombre_apellido(full_name):
     # Ejemplo: "Juan Gomez Perez" -> "Juan Gomez"
     return f"{partes[0]} {partes[1]}"
 
-def generar_password_complejo(longitud=12):
-    """
-    Genera una contraseña aleatoria compleja.
-    """
-    import string
-    import random
-    
-    # Caracteres a utilizar (evitamos caracteres ambiguos como l, I, O, 0 si fuera necesario, 
-    # pero para 'compleja' usaremos el set completo estándar)
-    caracteres = string.ascii_letters + string.digits + "!@#$%^&*"
-    
-    # Aseguramos que tenga al menos uno de cada tipo
-    password = [
-        random.choice(string.ascii_uppercase),
-        random.choice(string.ascii_lowercase),
-        random.choice(string.digits),
-        random.choice("!@#$%^&*")
-    ]
-    
-    # Completamos la longitud deseada
-    password += [random.choice(caracteres) for _ in range(longitud - 4)]
-    
-    # Mezclamos para que no sigan el orden de inserción inicial
-    random.shuffle(password)
-    
-    return "".join(password)

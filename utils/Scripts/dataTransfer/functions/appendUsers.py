@@ -1,7 +1,8 @@
+import bcrypt
 import psycopg2
 from psycopg2.extras import execute_values
 
-from functions.helpFunctions import extraer_primer_nombre_apellido, generar_password_complejo
+from functions.helpFunctions import extraer_primer_nombre_apellido
 
 def normalizar_carrera(carrera_raw):
 
@@ -128,11 +129,15 @@ def insertUsers(connection, intoData):
                     # Rol 4 -> INACTIVE 
                     id_rol = 4
                     
-                    # Password inicial: Generado aleatoriamente (Complejo)
-                    # NOTA: En la base de datos se espera que esté hasheado. 
-                    password_inicial = generar_password_complejo()
+                    # Password inicial: Prefijo del correo antes del @
+                    password_raw = correo.split('@')[0]
                     
-                    alumnos_a_insertar.append((correo, nombre, id_carrera, password_inicial, id_rol))
+                    # Hasheo con bcrypt (12 rounds para coincidir con el backend)
+                    # En Python bcrypt.hashpw devuelve bytes, decodificamos a utf-8 para la DB
+                    salt = bcrypt.gensalt(12)
+                    hashed_password = bcrypt.hashpw(password_raw.encode('utf-8'), salt).decode('utf-8')
+                    
+                    alumnos_a_insertar.append((correo, nombre, id_carrera, hashed_password, id_rol))
                 
                 if carrera_normalizada in carreras_count:
                     carreras_count[carrera_normalizada] += 1
