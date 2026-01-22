@@ -11,7 +11,7 @@ const doc = {
   },
   servers: [
     {
-      url: `http://localhost:${process.env.PORT || 3001}`
+      url: `http://site--polirank--xx689ws46wj9.code.run:${process.env.PORT || 3001}`
     }
   ],
   components: {
