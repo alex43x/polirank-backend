@@ -9,6 +9,12 @@ const sequelize = new Sequelize({
     password: process.env.PG_PASSWORD,
     port: process.env.PG_PORT || 5432,
     logging: false,
+    dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false // Importante para Supabase
+        }
+    }
 });
 
 export default sequelize;

@@ -7,7 +7,8 @@ from functions.appendDocs import insertDoc
 from functions.appendAsign import insertAsign
 from functions.appendSeccCur import insertSecciones
 from functions.searchUsers import usersImport
-from functions.appendMalla import insertMalla
+from functions.appendUsers import insertUsers
+from functions.appendmalla import insertMalla
 # Cargar variables de entorno desde el archivo .env en la raíz del proyecto
 env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), '.env')
 load_dotenv(env_path)
@@ -87,15 +88,28 @@ def menu_principal():
                     break
                     
                 elif opt == '2':
-                    print("INSERTAR A BASE DE DATOS")
+                    print("\n--- Insertando a Base de Datos ---")
+                    print("\nSeleccione archivo")
+                    ARCHIVO = seleccion_archivo()
+                    if not ARCHIVO: continue
+                    HOJA = obtener_nombre_hoja(ARCHIVO)
+                    
+                    #Extrae Asignatura y Departamento
+                    FILA_DE_INICIO = 2
+                    COLUMNAS_OBJETIVO = [0, 1, 2, 3, 4]
+                    # 0= Nombre y Apellido 1= Correo 2= CI 3= Carrera
+                    
+                    intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
+                    
+                    if intoData:
+                        insertUsers(connection, intoData)
+                    
+                    
                     input("\nPresiona ENTER para continuar...")
                     break
                 else:
                     input("Opción no válida. Presiona ENTER para intentar de nuevo...")
-            
-            
-            
-         
+      
         elif opcion == '4':
             limpiar_pantalla()
             print("\nSeleccione archivo")
@@ -145,6 +159,7 @@ def menu_principal():
             
             ARCHIVO = seleccion_archivo()
             if not ARCHIVO: continue 
+            
             HOJA = obtener_nombre_hoja(ARCHIVO)
             
            
@@ -154,7 +169,6 @@ def menu_principal():
             COLUMNAS_OBJETIVO = [0,1,2] 
             
             intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
-            '''mostrardatos(intoData)'''
             
             insertMalla(connection,intoData)
 
@@ -180,11 +194,10 @@ def obtener_configuracion_db():
     """
     # Variables requeridas
     required_vars = {
-        'host': os.getenv('DB_HOST'),
-        'user': os.getenv('DB_USER'),
-        'password': os.getenv('DB_PASSWORD'),
-        'database': os.getenv('DB_NAME'),
-        'schema': os.getenv('DB_SCHEMA')
+        'host': os.getenv('PG_HOST'),
+        'user': os.getenv('PG_USER'),
+        'password': os.getenv('PG_PASSWORD'),
+        'database': os.getenv('PG_DATABASE'),
     }
     
     # Verificar que todas las variables requeridas estén presentes
@@ -199,7 +212,7 @@ def obtener_configuracion_db():
         return None
     
     # Puerto es opcional, por defecto 5432
-    port = os.getenv('DB_PORT', '5432')
+    port = os.getenv('PG_PORT', '5432')
     
     return {
         'host': required_vars['host'],
@@ -207,7 +220,6 @@ def obtener_configuracion_db():
         'password': required_vars['password'],
         'database': required_vars['database'],
         'port': port,
-        'options': f"-c search_path={required_vars['schema']}"
     }
 
 

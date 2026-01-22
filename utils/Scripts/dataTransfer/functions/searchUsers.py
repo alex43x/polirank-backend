@@ -10,7 +10,7 @@ from googleapiclient.discovery import build
 
 # --- CONFIGURACIÓN ---
 SCOPES = ['https://www.googleapis.com/auth/directory.readonly']
-CARRERAS_OBJETIVO = ["IIN", "LCIK"]
+CARRERAS_OBJETIVO = []
 
 
 def usersImport():
@@ -23,7 +23,7 @@ def usersImport():
     El flujo de ejecución es:
     1.  **Autenticación**: Verifica u obtiene credenciales OAuth2 desde la carpeta 'config'.
     2.  **Extracción**: Descarga perfiles con campos 'names', 'emailAddresses', 'addresses', 'externalIds'.
-    3.  **Filtrado**: Selecciona usuarios si su dirección contiene alguna de las siglas en `CARRERAS_OBJETIVO`.
+    3.  **Filtrado**: NINGUNO (Extrae todos los usuarios del dominio).
     4.  **Exportación**: Abre un diálogo nativo del sistema (Tkinter) para guardar los resultados en Excel (.xlsx).
 
     Args:
@@ -80,8 +80,7 @@ def usersImport():
     try:
         service = build('people', 'v1', credentials=creds)
 
-        print(f"\n🚀 [Módulo Google] Iniciando escaneo masivo...")
-        print(f"🎯 Filtrando por: {CARRERAS_OBJETIVO}")
+        print(f"\n🚀 [Módulo Google] Iniciando escaneo masivo (Sin filtros)...")
         
         lista_encontrados = []
         next_page_token = None
@@ -102,24 +101,25 @@ def usersImport():
             total_escaneados += len(personas_bloque)
 
             for person in personas_bloque:
+                names = person.get('names', [])
+                name = names[0].get('displayName') if names else "Sin nombre"
+                
+                emails = person.get('emailAddresses', [])
+                email = emails[0].get('value') if emails else "Sin correo"
+                
+                ids = person.get('externalIds', [])
+                emp_id = ids[0].get('value') if ids else "Sin ID"
+                
                 addresses = person.get('addresses', [])
-                for addr in addresses:
-                    valor_direccion = addr.get('formattedValue', '').upper()
-                    if any(sigla in valor_direccion for sigla in CARRERAS_OBJETIVO):
-                        names = person.get('names', [])
-                        name = names[0].get('displayName') if names else "Sin nombre"
-                        emails = person.get('emailAddresses', [])
-                        email = emails[0].get('value') if emails else "Sin correo"
-                        ids = person.get('externalIds', [])
-                        emp_id = ids[0].get('value') if ids else "Sin ID"
-                        
-                        lista_encontrados.append({
-                            'Nombre Completo': name,
-                            'Email': email,
-                            'ID Empleado': emp_id,
-                            'Carrera Detectada': valor_direccion
-                        })
-                        break
+                # Tomamos la primera dirección si existe
+                valor_direccion = addresses[0].get('formattedValue', 'Sin Carrera') if addresses else "Sin Carrera"
+                
+                lista_encontrados.append({
+                    'Nombre Completo': name,
+                    'Email': email,
+                    'ID Empleado': emp_id,
+                    'Dirección/Ubicación': valor_direccion
+                })
             
             # Imprimimos progreso simple para no ensuciar tanto la consola del menú
             print(f"   -> Procesados: {total_escaneados} | Encontrados: {len(lista_encontrados)}")

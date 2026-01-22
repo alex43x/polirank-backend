@@ -2,31 +2,40 @@ import Subject from "../models/subjectModel.js";
 import Section from "../models/sectionModel.js";
 import Malla from "../models/curriculumModel.js";
 import Docente from "../models/teacherModel.js";
+import Departamento from "../models/departmentModel.js";
 import { Op } from "sequelize";
-
+import { getLastCourseBySection, getCourseAverage, totalReviewsForCourse } from "../services/courseService.js";
 
 // Helper para obtener IDs de asignaturas basado en mallas curriculares
-const getSubjectIdsByCurriculum = async (careerId, semester = null) => {
+const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
+  const whereConditions = {};
+
+  // Si careerId existe → filtramos por carrera
+  if (careerId !== null) {
+    whereConditions.carrera = careerId;
+  }
+
+  // Si se pasó semestre → filtramos por semestre
+  if (semester !== null) {
+    whereConditions.semestre = semester;
+  }
+
   const mallas = await Malla.findAndCountAll({
-    where: { carrera: careerId },
+    where: whereConditions,
   });
+
+  console.log(whereConditions)
+  console.log("Curriculum Records Found:", mallas.count);
 
   if (mallas.count === 0) {
     return null;
   }
 
-  // Si se proporciona semestre, filtrar por semestre
-  if (semester) {
-    const semesterSubjectIds = mallas.rows
-      .filter((malla) => malla.semestre === parseInt(semester))
-      .map((malla) => malla.asignatura);
-    
-    return semesterSubjectIds;
-  }
-
-  // Si no hay filtro de semestre, devolver todos los IDs
   const subjectIds = mallas.rows.map((malla) => malla.asignatura);
+  console.log("Subject IDs from Curriculum:", subjectIds);
   return subjectIds;
+  
+
 };
 
 const getAllSubjects = async (req, res) => {
@@ -55,14 +64,14 @@ const getAllSubjects = async (req, res) => {
     // Aplicar filtros por segun el rol del usuario
     switch (currentUser.rol.nombre) {
       case "ADMIN":
-        // ADMIN puede ver todas las materias, (puede aplicar filtro por carrera si se proporciona)
-        if (career_id) {
+        // ADMIN puede ver todas las materias
+        if (career_id || semester) {
           const subjectIds = await getSubjectIdsByCurriculum(career_id, semester);
-          
+
           if (!subjectIds) {
             return res.json("No subjects available for this user");
           }
-          
+
           whereConditions.id = { [Op.in]: subjectIds };
         }
 
@@ -71,7 +80,7 @@ const getAllSubjects = async (req, res) => {
       case "STUDENT":
         // STUDENT solo puede ver las materias de su carrera
         const subjectIds = await getSubjectIdsByCurriculum(
-          currentUser.carrera.id, 
+          currentUser.carrera.id,
           semester
         );
 
@@ -100,11 +109,16 @@ const getAllSubjects = async (req, res) => {
 
     // Tanto el Admin como el Student pueden aplicar filtro por departamento
     if (dpto_id) {
-      whereConditions.dpto_id = dpto_id;
+      whereConditions.depto = dpto_id;
     }
 
     const subjects = await Subject.findAndCountAll({
       where: whereConditions,
+      include: [
+        {
+          model: Departamento,
+        },
+      ],
       order: [["id", "ASC"]],
       limit,
       offset,
@@ -127,7 +141,30 @@ const getSubjectbyId = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const subject = await Subject.findByPk(id);
+    const currentUser = req.user;
+
+    if (currentUser.rol.nombre === "STUDENT") {
+      // Verificar que la materia pertenezca a la carrera del estudiante
+      const subjectIds = await getSubjectIdsByCurriculum(currentUser.carrera.id);
+      
+      if (!subjectIds || !subjectIds.includes(parseInt(id))) {
+        return res.status(403).json({ 
+          error: "No tienes permisos para ver esta materia" 
+        });
+      }
+    } else if (currentUser.rol.nombre !== "ADMIN") {
+      return res.status(403).json({ 
+        error: "No tienes permisos para ver materias" 
+      });
+    }
+
+    const subject = await Subject.findByPk(id, {
+      include: [
+        {
+          model: Departamento,
+        },
+      ],
+    });
 
     if (!subject) {
       return res.status(404).json({ error: "Materia no encontrada" });
@@ -144,14 +181,31 @@ const getSectionsBySubjectId = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const sections = await await Section.findAll({
-    where: { asignatura: id },
-    include: [
-      {
-        model: Docente,
-      },
-    ],
-  });
+    const currentUser = req.user;
+
+    if (currentUser.rol.nombre === "STUDENT") {
+      const subjectIds = await getSubjectIdsByCurriculum(currentUser.carrera.id);
+      
+      if (!subjectIds || !subjectIds.includes(parseInt(id))) {
+        return res.status(403).json({ 
+          error: "No tienes permisos para ver las secciones de esta materia" 
+        });
+      }
+    } else if (currentUser.rol.nombre !== "ADMIN") {
+      return res.status(403).json({ 
+        error: "No tienes permisos para ver secciones" 
+      });
+    }
+
+    const sections = await Section.findAll({
+      where: { asignatura: id },
+      include: [
+        {
+          model: Docente,
+        },
+      ],
+    });
+    
     return res.status(200).json(sections);
   } catch (error) {
     console.error("Error al obtener las secciones:", error);
@@ -159,8 +213,44 @@ const getSectionsBySubjectId = async (req, res) => {
   }
 };
 
+const getSectionsStatsBySubjectId = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const sections = await Section.findAll({
+        where: { asignatura: id },
+        include: [{ model: Docente }],
+      });
+
+    const sectionsWithAverage = [];
+
+    for (const section of sections) {
+      const lastCurso = await getLastCourseBySection(section.id);
+      if (!lastCurso) continue;
+
+      const average = await getCourseAverage(lastCurso.id);
+      const totalReviews = await totalReviewsForCourse(lastCurso.id);
+
+      sectionsWithAverage.push({
+        section,
+        lastCurso,
+        totalReviews,
+        promedioGeneral: average.result,
+      });
+    }
+
+    sectionsWithAverage.sort((a, b) => b.promedioGeneral - a.promedioGeneral);
+    return res.status(200).json(sectionsWithAverage);
+
+  } catch (error) {
+    console.error("Error al obtener las estadísticas de secciones:", error);
+    res.status(500).send("Error al obtener las estadísticas de secciones");
+  }
+};
+
 export default {
   getAllSubjects,
   getSubjectbyId,
   getSectionsBySubjectId,
+  getSectionsStatsBySubjectId,
 };

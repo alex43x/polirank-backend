@@ -1,4 +1,9 @@
+import Aspecto from "../models/aspectModel.js";
+import ReviewCab from "../models/reviewCab.js";
+import ReviewCont from "../models/reviewCont.js";
+import Rol from "../models/roleModel.js";
 import Alumno from "../models/studentModel.js";
+import Carrera from "../models/careerModel.js";
 import { Op } from "sequelize";
 
 const getAllStudents = async (req, res) => {
@@ -20,18 +25,18 @@ const getAllStudents = async (req, res) => {
     if (search) {
       whereConditions[Op.or] = [
         { nombre: { [Op.iLike]: `%${search}%` } },
-        { correo: { [Op.iLike]: `%${search}%` } }
+        { correo: { [Op.iLike]: `%${search}%` } },
       ];
     }
 
     // Filtro por carrera
     if (carrera_id) {
-      whereConditions.carrera_id = carrera_id;
+      whereConditions.carrera = carrera_id;
     }
 
     // Filtro por rol
     if (rol_id) {
-      whereConditions.rol_id = rol_id;
+      whereConditions.rol = rol_id;
     }
 
     const students = await Alumno.findAndCountAll({
@@ -46,7 +51,7 @@ const getAllStudents = async (req, res) => {
       totalPages: Math.ceil(students.count / limit),
       currentPage: page,
       limit,
-      students: students.rows
+      students: students.rows,
     });
   } catch (error) {
     console.error("Error al obtener los usuarios:", error);
@@ -58,7 +63,10 @@ const getStudentbyId = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const student = await Alumno.findByPk(id);
+    const student = await Alumno.findByPk(id,
+      {
+      include: [{ model: Rol }, { model: Carrera }]
+    });
 
     if (!student) {
       return res.status(404).json({ error: "Usuario no encontrado" });
@@ -71,10 +79,37 @@ const getStudentbyId = async (req, res) => {
   }
 };
 
-const createStudent = async (req, res) => {
-  const { nombre, correo, password } = req.body;
+const getStudentReviews = async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const reviews = await ReviewCab.findAndCountAll({
+      where: { alumno: id },
+      include: [
+        {
+          model: ReviewCont,
+          include: [
+            {
+              model: Aspecto,
+            },
+          ],
+        },
+      ],
+    });
+    if (reviews.count === 0) {
+      return res.status(404).json({ error: "No se encontraron reseñas para este usuario" });
+    }
+    return res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Error al obtener las reseñas del usuario:", error);
+    res.status(500).send("Error al obtener las reseñas del usuario");
+  }
+};
 
-  if (!nombre || !correo || !password) {
+const createStudent = async (req, res) => {
+  const { nombre, correo, password, carrera, rol } = req.body;
+
+  if (!nombre || !correo || !password || !carrera || !rol) {
     return res.status(400).json({ error: "Faltan campos requeridos" });
   }
 
@@ -83,6 +118,8 @@ const createStudent = async (req, res) => {
       nombre,
       correo,
       password,
+      carrera,
+      rol,
     });
 
     res.status(201).json(newStudent);
@@ -137,6 +174,7 @@ const deleteStudent = async (req, res) => {
 export default {
   getAllStudents,
   getStudentbyId,
+  getStudentReviews,
   createStudent,
   updateStudent,
   deleteStudent,
