@@ -262,16 +262,6 @@ const updateReview = async (req, res) => {
           });
         }
       }
-
-      await Promise.all(
-        aspectos.map((aspecto) =>
-          ReviewCont.create({
-            revcab: id,
-            aspecto: aspecto.aspecto,
-            valor: aspecto.valor,
-          })
-        )
-      );
     }
 
     const reviewActualizado = await ReviewCab.findByPk(id, {
@@ -293,7 +283,6 @@ const deleteReview = async (req, res) => {
   try {
     const { id } = req.params;
     const usuarioId = req.user.id;
-    const usuarioRol = req.user.rol.nombre;
 
     const review = await ReviewCab.findByPk(id);
 
