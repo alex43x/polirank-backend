@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:3000"
+      "url": "http://site--polirank--xx689ws46wj9.code.run:8080"
     }
   ],
   "paths": {
