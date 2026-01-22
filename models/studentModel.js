@@ -26,6 +26,9 @@ const Alumno = sequelize.define(
     password: {
       type: DataTypes.TEXT,
       allowNull: false,
+      validate: {
+        notEmpty: true,
+      },
     },
     rol: {
       type: DataTypes.INTEGER,
@@ -37,9 +40,11 @@ const Alumno = sequelize.define(
     timestamps: false,
 
     hooks: {
-      async beforeCreate(user) {
-        const salt = await bcrypt.genSalt(12);
-        user.password = await bcrypt.hash(user.password, salt);
+      async beforeSave(user) {
+        if (user.changed("password")) {
+          const salt = await bcrypt.genSalt(12);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
       },
     },
     defaultScope: {

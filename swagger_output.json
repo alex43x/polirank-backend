@@ -175,6 +175,56 @@
         }
       }
     },
+    "/auth/create-password": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Crear contraseña",
+        "description": "Crear una nueva contraseña para un usuario inactivo.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "correo",
+                  "newPassword"
+                ],
+                "properties": {
+                  "correo": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "estudiante@example.com"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "nuevaPassword123"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/alumnos/": {
       "get": {
         "tags": [
