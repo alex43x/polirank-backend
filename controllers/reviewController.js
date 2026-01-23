@@ -19,6 +19,7 @@ const getReviewIncludes = (filters = {}) => {
           model: Aspecto,
         },
       ],
+      order: [["id", "ASC"]],
     },
     {
       model: Curso,
