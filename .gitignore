@@ -1,4 +1,6 @@
 .env
-utils/Scripts/archivos
-utils/Scripts/__pycache__
 node_modules
+utils/Scripts/dataTransfer/env
+utils/Scripts/dataTransfer/functions/__pycache__
+utils/Scripts/dataTransfer/config/credentials.json
+
