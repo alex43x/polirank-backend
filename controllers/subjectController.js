@@ -3,9 +3,16 @@ import Section from "../models/sectionModel.js";
 import Malla from "../models/curriculumModel.js";
 import Docente from "../models/teacherModel.js";
 import Departamento from "../models/departmentModel.js";
+import Curso from "../models/courseModel.js";
+import Intento from "../models/triesModel.js";
 import { Op } from "sequelize";
-import { getLastCourseBySection, getCourseAverage, totalReviewsForCourse } from "../services/courseService.js";
-
+import {
+  getLastCourseBySection,
+  getCourseAverage,
+  totalReviewsForCourse,
+  getLastCoursesBySection,
+  getStatsByCourse,
+} from "../services/courseService.js";
 // Helper para obtener IDs de asignaturas basado en mallas curriculares
 const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
   const whereConditions = {};
@@ -225,17 +232,27 @@ const getSectionsStatsBySubjectId = async (req, res) => {
     const sectionsWithAverage = [];
 
     for (const section of sections) {
-      const lastCurso = await getLastCourseBySection(section.id);
-      if (!lastCurso) continue;
+      const lastCursos = await getLastCoursesBySection(section.id);
+      if (!lastCursos || lastCursos.length === 0) continue;
 
-      const average = await getCourseAverage(lastCurso.id);
-      const totalReviews = await totalReviewsForCourse(lastCurso.id);
+      const courseStatsPromises = lastCursos.map(async (curso) => {
+        const [stats, average, totalReviewsForCurso] = await Promise.all([
+          getStatsByCourse(curso.id),
+          getCourseAverage(curso.id),
+          totalReviewsForCourse(curso.id),
+        ]);
+        return { curso, stats, promedioGeneral: average.result, totalReviewsForCurso };
+      });
+
+      const courseStats = await Promise.all(courseStatsPromises);
+
+      const totalAverage = courseStats.reduce((acc, c) => acc + parseFloat(c.promedioGeneral), 0) / lastCursos.length;
+      const totalReviews = courseStats.reduce((acc, c) => acc + c.totalReviewsForCurso, 0);
 
       sectionsWithAverage.push({
         section,
-        lastCurso,
-        totalReviews,
-        promedioGeneral: average.result,
+        promedioGeneral: totalAverage,
+        totalReviews: totalReviews,
       });
     }
 

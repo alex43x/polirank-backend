@@ -1,4 +1,3 @@
-import { Model } from 'sequelize';
 import Curso from '../models/courseModel.js';
 import Stats from '../models/statsModel.js';
 import Aspecto from '../models/aspectModel.js';
@@ -13,6 +12,21 @@ const getLastCourseBySection = (seccionId) => {
         ]
     });
 }
+
+const getLastCoursesBySection = async (seccionId) => {
+    const courses = await Curso.findAll({
+        where: { seccion: seccionId },
+        order: [
+        ['year', 'DESC'],
+        ['periodo', 'DESC'],
+        ],
+        limit: 2
+    });
+
+    return courses
+};
+
+
 
 const getCourseAverage = async (courseId) => {
     const stats = await getStatsByCourse(courseId);
@@ -42,4 +56,4 @@ const getStatsByCourse = async (courseId) => {
     return stats;
 }
 
-export { getLastCourseBySection, getCourseAverage, totalReviewsForCourse, getStatsByCourse };
+export { getLastCourseBySection, getCourseAverage, totalReviewsForCourse, getStatsByCourse, getLastCoursesBySection };
