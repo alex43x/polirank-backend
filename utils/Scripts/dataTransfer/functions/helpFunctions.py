@@ -361,6 +361,8 @@ def estandarizar_nombre_asignatura(nombre):
     
     # 1. Limpieza inicial
     nombre = re.sub(r'\s*\(\*+\)', '', str(nombre))
+    # Remove text within parentheses (including the parentheses)
+    nombre = re.sub(r'\s*\(.*?\)', '', nombre)
     nombre = ' '.join(nombre.split())
     
     # 2. DICCIONARIO DE CORRECCIONES (Aquí forzamos la mayúscula)
