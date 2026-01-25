@@ -70,6 +70,7 @@ const getUserProfile = async (req, res) => {
               model: Aspecto,
             },
           ],
+          order: [["fecha", "DESC"], [ReviewCont, Aspecto, "id", "ASC"]],
         },
       ],
     });

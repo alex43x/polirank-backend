@@ -37,6 +37,7 @@ const getStatsByCourse = async (courseId) => {
                 model: Aspecto,
             },
         ],
+        order: [["aspecto", "ASC"]],
     });
     return stats;
 }
