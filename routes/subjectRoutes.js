@@ -107,4 +107,24 @@ subjectRoutes.get("/:id/secciones",
   subjectController.getSectionsStatsBySubjectId
 );
 
+subjectRoutes.get("/:id/intentos",
+  /* #swagger.tags = ['Materias']
+     #swagger.summary = 'Obtener estadísticas de intentos de una materia'
+     #swagger.description = 'Obtener la distribución de estudiantes agrupados por número de intentos en una materia.'
+     #swagger.parameters['id'] = {
+       in: 'path',
+       description: 'ID de la materia',
+       required: true,
+       type: 'integer'
+     }
+     #swagger.responses[200] = {
+       description: "Estadísticas de intentos obtenidas exitosamente"
+     }
+     #swagger.responses[401] = {
+       description: "No autenticado"
+     }
+  */
+  subjectController.getSubjectTriesStats
+);
+
 export default subjectRoutes;

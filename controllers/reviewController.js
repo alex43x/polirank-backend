@@ -58,7 +58,7 @@ const getAllReviews = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const { docente, curso, materia, alumno } = req.query;
+    const { curso, alumno } = req.query;
 
     const whereConditions = {};
     if (curso) whereConditions.curso = curso;
@@ -66,8 +66,8 @@ const getAllReviews = async (req, res) => {
 
     const reviews = await ReviewCab.findAndCountAll({
       where: whereConditions,
-      include: getReviewIncludes({ docente, materia }),
-      order: [["fecha", "DESC"]],
+      include: getReviewIncludes(),
+      order: [["fecha", "DESC"], [ReviewCont, Aspecto, "id", "ASC"]],
       limit,
       offset,
       distinct: true,

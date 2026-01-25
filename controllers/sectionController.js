@@ -4,6 +4,7 @@ import {
   getCourseAverage,
   totalReviewsForCourse,
   getStatsByCourse,
+  getLastCoursesBySection,
 } from "../services/courseService.js";
 import Stats from "../models/statsModel.js";
 import Aspecto from "../models/aspectModel.js";
@@ -19,23 +20,55 @@ const getSectionLastStats = async (req, res) => {
       return res.status(404).json({ message: "Sección no encontrada" });
     }
 
-    const lastCurso = await getLastCourseBySection(section.id);
-    if (!lastCurso) {
+    const lastCursos = await getLastCoursesBySection(section.id);
+    if (!lastCursos || lastCursos.length === 0) {
       return res
         .status(200)
         .json({ message: "No hay cursos disponibles para esta sección" });
     }
 
-    const [stats, average, totalReviews] = await Promise.all([
-      getStatsByCourse(lastCurso.id),
-      getCourseAverage(lastCurso.id),
-      totalReviewsForCourse(lastCurso.id),
-    ]);
+    const courseStatsPromises = lastCursos.map(async (curso) => {
+      const [stats, average, totalReviewsForCurso] = await Promise.all([
+        getStatsByCourse(curso.id),
+        getCourseAverage(curso.id),
+        totalReviewsForCourse(curso.id),
+      ]);
+      return { curso, stats, promedioGeneral: average.result, totalReviewsForCurso };
+    });
+
+    const courseStats = await Promise.all(courseStatsPromises);
+
+    // Agrupar y promediar stats por aspecto
+    const statsMap = {};
+    courseStats.forEach((courseData) => {
+      courseData.stats.rows.forEach((stat) => {
+        const aspectId = stat.aspecto;
+        if (!statsMap[aspectId]) {
+          statsMap[aspectId] = {
+            aspecto: aspectId,
+            promedio: 0,
+            count: 0,
+            aspect: stat.Aspecto,
+          };
+        }
+        statsMap[aspectId].promedio += parseFloat(stat.promedio);
+        statsMap[aspectId].count += 1;
+      });
+    });
+
+    // Calcular promedio final para cada aspecto
+    const combinedStats = Object.values(statsMap).map((stat) => ({
+      ...stat,
+      promedio: (stat.promedio / stat.count).toFixed(2),
+    }));
+
+    const totalAverage = courseStats.reduce((acc, c) => acc + parseFloat(c.promedioGeneral), 0) / lastCursos.length;
+    const totalReviews = courseStats.reduce((acc, c) => acc + c.totalReviewsForCurso, 0);
 
     const response = {
-      course: lastCurso,
-      stats,
-      promedioGeneral: average.result,
+      courses: lastCursos,
+      stats: combinedStats,
+      promedioGeneral: totalAverage,
       totalReviews
     };
 

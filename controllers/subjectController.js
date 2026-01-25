@@ -3,9 +3,17 @@ import Section from "../models/sectionModel.js";
 import Malla from "../models/curriculumModel.js";
 import Docente from "../models/teacherModel.js";
 import Departamento from "../models/departmentModel.js";
+import Curso from "../models/courseModel.js";
+import Intento from "../models/triesModel.js";
 import { Op } from "sequelize";
-import { getLastCourseBySection, getCourseAverage, totalReviewsForCourse } from "../services/courseService.js";
-
+import {
+  getLastCourseBySection,
+  getCourseAverage,
+  totalReviewsForCourse,
+  getLastCoursesBySection,
+  getStatsByCourse,
+} from "../services/courseService.js";
+import { calculateSubjectTriesStats } from "../services/subjectService.js";
 // Helper para obtener IDs de asignaturas basado en mallas curriculares
 const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
   const whereConditions = {};
@@ -24,9 +32,6 @@ const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
     where: whereConditions,
   });
 
-  console.log(whereConditions)
-  console.log("Curriculum Records Found:", mallas.count);
-
   if (mallas.count === 0) {
     return null;
   }
@@ -34,8 +39,6 @@ const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
   const subjectIds = mallas.rows.map((malla) => malla.asignatura);
   console.log("Subject IDs from Curriculum:", subjectIds);
   return subjectIds;
-  
-
 };
 
 const getAllSubjects = async (req, res) => {
@@ -91,7 +94,6 @@ const getAllSubjects = async (req, res) => {
         whereConditions.id = { [Op.in]: subjectIds };
         break;
 
-
       default:
         // Otros roles no tienen acceso
         return {
@@ -146,14 +148,14 @@ const getSubjectbyId = async (req, res) => {
     if (currentUser.rol.nombre === "STUDENT") {
       // Verificar que la materia pertenezca a la carrera del estudiante
       const subjectIds = await getSubjectIdsByCurriculum(currentUser.carrera.id);
-      
+
       if (!subjectIds || !subjectIds.includes(parseInt(id))) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           error: "No tienes permisos para ver esta materia" 
         });
       }
     } else if (currentUser.rol.nombre !== "ADMIN") {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "No tienes permisos para ver materias" 
       });
     }
@@ -185,14 +187,14 @@ const getSectionsBySubjectId = async (req, res) => {
 
     if (currentUser.rol.nombre === "STUDENT") {
       const subjectIds = await getSubjectIdsByCurriculum(currentUser.carrera.id);
-      
+
       if (!subjectIds || !subjectIds.includes(parseInt(id))) {
-        return res.status(403).json({ 
+        return res.status(403).json({
           error: "No tienes permisos para ver las secciones de esta materia" 
         });
       }
     } else if (currentUser.rol.nombre !== "ADMIN") {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: "No tienes permisos para ver secciones" 
       });
     }
@@ -205,7 +207,7 @@ const getSectionsBySubjectId = async (req, res) => {
         },
       ],
     });
-    
+
     return res.status(200).json(sections);
   } catch (error) {
     console.error("Error al obtener las secciones:", error);
@@ -218,33 +220,55 @@ const getSectionsStatsBySubjectId = async (req, res) => {
 
   try {
     const sections = await Section.findAll({
-        where: { asignatura: id },
-        include: [{ model: Docente }],
-      });
+      where: { asignatura: id },
+      include: [{ model: Docente }],
+    });
 
     const sectionsWithAverage = [];
 
     for (const section of sections) {
-      const lastCurso = await getLastCourseBySection(section.id);
-      if (!lastCurso) continue;
+      const lastCursos = await getLastCoursesBySection(section.id);
+      if (!lastCursos || lastCursos.length === 0) continue;
 
-      const average = await getCourseAverage(lastCurso.id);
-      const totalReviews = await totalReviewsForCourse(lastCurso.id);
+      const courseStatsPromises = lastCursos.map(async (curso) => {
+        const [stats, average, totalReviewsForCurso] = await Promise.all([
+          getStatsByCourse(curso.id),
+          getCourseAverage(curso.id),
+          totalReviewsForCourse(curso.id),
+        ]);
+        return { curso, stats, promedioGeneral: average.result, totalReviewsForCurso };
+      });
+
+      const courseStats = await Promise.all(courseStatsPromises);
+
+      const totalAverage = courseStats.reduce((acc, c) => acc + parseFloat(c.promedioGeneral), 0) / lastCursos.length;
+      const totalReviews = courseStats.reduce((acc, c) => acc + c.totalReviewsForCurso, 0);
 
       sectionsWithAverage.push({
         section,
-        lastCurso,
-        totalReviews,
-        promedioGeneral: average.result,
+        promedioGeneral: totalAverage,
+        totalReviews: totalReviews,
       });
     }
 
     sectionsWithAverage.sort((a, b) => b.promedioGeneral - a.promedioGeneral);
     return res.status(200).json(sectionsWithAverage);
-
   } catch (error) {
     console.error("Error al obtener las estadísticas de secciones:", error);
     res.status(500).send("Error al obtener las estadísticas de secciones");
+  }
+};
+
+
+const getSubjectTriesStats = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const stats = await calculateSubjectTriesStats(id);
+    return res.status(200).json(stats);
+  } catch (error) {
+    console.error("Error al obtener las estadísticas de intentos:", error);
+    return res.status(500).send("Error al obtener las estadísticas de intentos");
   }
 };
 
@@ -253,4 +277,5 @@ export default {
   getSubjectbyId,
   getSectionsBySubjectId,
   getSectionsStatsBySubjectId,
+  getSubjectTriesStats,
 };
