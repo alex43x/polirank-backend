@@ -1,6 +1,8 @@
 import Alumno from "../models/studentModel.js";
 import Rol from "../models/roleModel.js";
 import Carrera from "../models/careerModel.js";
+import Intento from "../models/triesModel.js";
+import Materia from "../models/subjectModel.js";
 import Aspecto from "../models/aspectModel.js";
 import ReviewCont from "../models/reviewCont.js";
 import ReviewCab from "../models/reviewCab.js";
@@ -55,7 +57,18 @@ const getUserProfile = async (req, res) => {
 
   try {
     const student = await Alumno.findByPk(currentUser.id, {
-      include: [{ model: Rol }, { model: Carrera }],
+      include: [
+        { model: Rol },
+        { model: Carrera },
+        {
+          model: Intento,
+          include: [
+            {
+              model: Materia,
+            },
+          ],
+        }
+      ],
     });
     if (!student) {
       return res.status(404).json({ message: "User not found" });
