@@ -95,7 +95,7 @@ studentRoutes.post("/", roleMiddleware(['ADMIN']),
          "application/json": {
            schema: {
              type: "object",
-             required: ["nombre", "correo", "password", "carrera", "rol"],
+             required: ["nombre", "correo", "password", "rol"],
              properties: {
                nombre: {
                  type: "string",
@@ -114,10 +114,13 @@ studentRoutes.post("/", roleMiddleware(['ADMIN']),
                  example: "password123",
                  description: "Contraseña del estudiante"
                },
-               carrera: {
-                 type: "integer",
-                 example: 1,
-                 description: "ID de la carrera"
+               carreras: {
+                 type: "array",
+                 items: {
+                   type: "integer"
+                 },
+                 example: [1, 3, 5],
+                 description: "IDs de las carreras (opcional)"
                },
                rol: {
                  type: "integer",

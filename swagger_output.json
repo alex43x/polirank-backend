@@ -341,17 +341,17 @@
                     "example": "password123",
                     "description": "Contraseña del estudiante"
                   },
-                  "matriculaciones": {
+                  "carreras": {
                     "type": "array",
                     "items": {
                       "type": "integer"
                     },
                     "example": [
+                      1,
                       3,
-                      5,
-                      7
+                      5
                     ],
-                    "description": "Array de IDs de carreras para matricular al estudiante (opcional)"
+                    "description": "IDs de las carreras (opcional)"
                   },
                   "rol": {
                     "type": "integer",
@@ -622,6 +622,9 @@
         "responses": {
           "200": {
             "description": "Materia obtenida exitosamente"
+          },
+          "400": {
+            "description": "Bad Request"
           },
           "401": {
             "description": "No autenticado"

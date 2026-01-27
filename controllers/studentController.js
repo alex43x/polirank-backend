@@ -80,8 +80,6 @@ const getStudentbyId = async (req, res) => {
         { model: Rol },
         {
           model: Matriculacion,
-          as: "matriculaciones",
-          attributes: ["id", "carrera"]
         }
       ]
     });
@@ -125,14 +123,14 @@ const getStudentReviews = async (req, res) => {
 };
 
 const createStudent = async (req, res) => {
-  const { nombre, correo, password, rol, matriculaciones } = req.body;
+  const { nombre, correo, password, rol, carreras } = req.body;
 
   if (!nombre || !correo || !password || !rol) {
     return res.status(400).json({ error: "Faltan campos requeridos: nombre, correo, password, rol" });
   }
 
   try {
-    // Crear alumno SIN carrera (el campo carrera ya no existe en el modelo)
+    // Crear alumno
     const newStudent = await Alumno.create({
       nombre,
       correo,
@@ -140,11 +138,10 @@ const createStudent = async (req, res) => {
       rol,
     });
 
-    // Crear matriculaciones si se proporcionan
-    let matriculaciones_creadas = [];
-    if (matriculaciones && Array.isArray(matriculaciones) && matriculaciones.length > 0) {
-      matriculaciones_creadas = await Promise.all(
-        matriculaciones.map(carrera_id => 
+    // Crear matriculaciones si se proporcionan carreras
+    if (carreras && Array.isArray(carreras) && carreras.length > 0) {
+      await Promise.all(
+        carreras.map(carrera_id => 
           Matriculacion.create({
             alumno: newStudent.id,
             carrera: carrera_id
@@ -159,7 +156,6 @@ const createStudent = async (req, res) => {
         { model: Rol },
         {
           model: Matriculacion,
-          as: "matriculaciones",
           include: [{ model: Carrera }]
         }
       ]
