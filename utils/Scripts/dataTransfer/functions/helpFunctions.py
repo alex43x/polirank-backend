@@ -358,8 +358,10 @@ def estandarizar_nombre_asignatura(nombre):
     """
     if not nombre: return ""
     
-    # 1. Limpieza inicial
-    nombre = re.sub(r'\s*\(\*+\)', '', str(nombre))
+    # 1. Limpieza inicial: Remover texto entre paréntesis y corchetes
+    # Elimina (*), (Texto), [Texto], etc.
+    nombre = re.sub(r'\s*[\(\[].*?[\)\]]', '', str(nombre))
+    # Eliminar espacios extra que pudieran quedar
     nombre = ' '.join(nombre.split())
     
     # 2. DICCIONARIO DE CORRECCIONES (Aquí forzamos la mayúscula)
