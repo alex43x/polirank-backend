@@ -95,7 +95,7 @@ def menu_principal():
                     HOJA = obtener_nombre_hoja(ARCHIVO)
                     
                     #Extrae Asignatura y Departamento
-                    FILA_DE_INICIO = 2
+                    FILA_DE_INICIO = 1
                     COLUMNAS_OBJETIVO = [0, 1, 2, 3, 4]
                     # 0= Nombre y Apellido 1= Correo 2= CI 3= Carrera
                     
