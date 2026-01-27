@@ -37,7 +37,6 @@ const getSubjectIdsByCurriculum = async (careerId = null, semester = null) => {
   }
 
   const subjectIds = mallas.rows.map((malla) => malla.asignatura);
-  console.log("Subject IDs from Curriculum:", subjectIds);
   return subjectIds;
 };
 
@@ -81,9 +80,12 @@ const getAllSubjects = async (req, res) => {
         break;
 
       case "STUDENT":
-        // STUDENT solo puede ver las materias de su carrera
+        // STUDENT solo puede ver las materias de su carrera (desde header X-Carrera-Id)
+        if (!req.carreraId) {
+          return res.status(400).json({ error: "Se requiere X-Carrera-Id header" });
+        }
         const subjectIds = await getSubjectIdsByCurriculum(
-          currentUser.carrera.id,
+          req.carreraId,
           semester
         );
 
@@ -147,7 +149,10 @@ const getSubjectbyId = async (req, res) => {
 
     if (currentUser.rol.nombre === "STUDENT") {
       // Verificar que la materia pertenezca a la carrera del estudiante
-      const subjectIds = await getSubjectIdsByCurriculum(currentUser.carrera.id);
+      if (!req.carreraId) {
+        return res.status(400).json({ error: "Se requiere X-Carrera-Id header" });
+      }
+      const subjectIds = await getSubjectIdsByCurriculum(req.carreraId);
 
       if (!subjectIds || !subjectIds.includes(parseInt(id))) {
         return res.status(403).json({
@@ -186,7 +191,10 @@ const getSectionsBySubjectId = async (req, res) => {
     const currentUser = req.user;
 
     if (currentUser.rol.nombre === "STUDENT") {
-      const subjectIds = await getSubjectIdsByCurriculum(currentUser.carrera.id);
+      if (!req.carreraId) {
+        return res.status(400).json({ error: "Se requiere X-Carrera-Id header" });
+      }
+      const subjectIds = await getSubjectIdsByCurriculum(req.carreraId);
 
       if (!subjectIds || !subjectIds.includes(parseInt(id))) {
         return res.status(403).json({

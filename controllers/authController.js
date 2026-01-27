@@ -1,11 +1,11 @@
 import Alumno from "../models/studentModel.js";
 import Rol from "../models/roleModel.js";
 import Carrera from "../models/careerModel.js";
-import Intento from "../models/triesModel.js";
-import Materia from "../models/subjectModel.js";
+import Matriculacion from "../models/enrollmentModel.js";
 import Aspecto from "../models/aspectModel.js";
 import ReviewCont from "../models/reviewCont.js";
 import ReviewCab from "../models/reviewCab.js";
+import Intento from "../models/triesModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -17,7 +17,7 @@ const login = async (req, res, next) => {
     });
 
     if (!loginUser) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Email does not exist" });
     }
 
     const isMatch = await bcrypt.compare(password, loginUser.password);
@@ -27,7 +27,14 @@ const login = async (req, res, next) => {
     }
 
     const student = await Alumno.findByPk(loginUser.id, {
-      include: [{ model: Rol }, { model: Carrera }],
+      include: [
+        { model: Rol },
+        {
+          model: Matriculacion,
+          include: [{ model: Carrera }],
+          attributes: ["id", "carrera"],
+        },
+      ],
     });
 
     const token = jwt.sign(
@@ -35,7 +42,6 @@ const login = async (req, res, next) => {
         id: student.id,
         correo: student.correo,
         rol: student.Rol,
-        carrera: student.Carrera,
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN },
@@ -59,15 +65,11 @@ const getUserProfile = async (req, res) => {
     const student = await Alumno.findByPk(currentUser.id, {
       include: [
         { model: Rol },
-        { model: Carrera },
         {
-          model: Intento,
-          include: [
-            {
-              model: Materia,
-            },
-          ],
-        }
+          model: Matriculacion,
+          include: [{ model: Carrera, attributes: ["id", "nombre"] }],
+          attributes: ["id", "carrera"],
+        },
       ],
     });
     if (!student) {
@@ -88,7 +90,12 @@ const getUserProfile = async (req, res) => {
       ],
     });
 
-    res.status(200).json({ student, reviews });
+    const tries = await Intento.findAndCountAll({
+      where: { alumno: currentUser.id },
+    });
+
+
+    res.status(200).json({ student, reviews, tries });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
@@ -107,7 +114,13 @@ const createPassword = async (req, res) => {
     const [student, rol] = await Promise.all([
       Alumno.findOne({
         where: { correo },
-        include: [{ model: Rol }, { model: Carrera }],
+        include: [
+          { model: Rol },
+          {
+            model: Matriculacion,
+            include: [{ model: Carrera }]
+          }
+        ],
       }),
       Rol.findOne({ where: { nombre: "STUDENT" } }),
     ]);
@@ -126,7 +139,13 @@ const createPassword = async (req, res) => {
 
     // Traemos el alumno actualizado con relaciones
     const updatedStudent = await Alumno.findByPk(student.id, {
-      include: [{ model: Rol }, { model: Carrera }],
+      include: [
+        { model: Rol },
+        {
+          model: Matriculacion,
+          include: [{ model: Carrera }]
+        }
+      ],
     });
 
     res.status(200).json({

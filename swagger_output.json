@@ -321,7 +321,6 @@
                   "nombre",
                   "correo",
                   "password",
-                  "carrera",
                   "rol"
                 ],
                 "properties": {
@@ -342,10 +341,17 @@
                     "example": "password123",
                     "description": "Contraseña del estudiante"
                   },
-                  "carrera": {
-                    "type": "integer",
-                    "example": 1,
-                    "description": "ID de la carrera"
+                  "matriculaciones": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "example": [
+                      3,
+                      5,
+                      7
+                    ],
+                    "description": "Array de IDs de carreras para matricular al estudiante (opcional)"
                   },
                   "rol": {
                     "type": "integer",
@@ -583,6 +589,9 @@
           "200": {
             "description": "Lista de materias obtenida exitosamente"
           },
+          "400": {
+            "description": "Bad Request"
+          },
           "401": {
             "description": "No autenticado"
           },
@@ -659,6 +668,37 @@
           },
           "404": {
             "description": "Materia no encontrada"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/materias/{id}/intentos": {
+      "get": {
+        "tags": [
+          "Materias"
+        ],
+        "summary": "Obtener estadísticas de intentos de una materia",
+        "description": "Obtener la distribución de estudiantes agrupados por número de intentos en una materia.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID de la materia"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estadísticas de intentos obtenidas exitosamente"
+          },
+          "401": {
+            "description": "No autenticado"
           },
           "500": {
             "description": "Internal Server Error"
@@ -1378,12 +1418,18 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      },
+      "carreraId": {
+        "type": "apiKey",
+        "name": "x-carrera-id",
+        "in": "header"
       }
     }
   },
   "security": [
     {
-      "bearerAuth": []
+      "bearerAuth": [],
+      "carreraId": []
     }
   ]
 }

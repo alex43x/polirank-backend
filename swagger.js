@@ -11,7 +11,7 @@ const doc = {
   },
   servers: [
     {
-      url: `http://site--polirank--xx689ws46wj9.code.run:${process.env.PORT || 3001}`
+      url: `http://localhost:${process.env.PORT || 3000}`,
     }
   ],
   components: {
@@ -20,15 +20,22 @@ const doc = {
         type: "http",
         scheme: "bearer",
         bearerFormat: "JWT"
+      },
+      carreraId: {
+        type: "apiKey",        
+        name: "x-carrera-id",  
+        in: "header"           
       }
     }
   },
   security: [
     {
-      bearerAuth: []
+      bearerAuth: [],
+      carreraId: []
     }
   ]
 };
+
 
 const outputFile = "./swagger_output.json";
 const endpointsFiles = ["./app.js"];

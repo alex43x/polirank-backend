@@ -13,14 +13,18 @@ import ReviewCab from "./reviewCab.js";
 import ReviewCont from "./reviewCont.js";
 import Departamento from "./departmentModel.js";
 import Estadistica from "./statsModel.js";
+import Matriculacion from "./enrollmentModel.js";
 
 // Definir relaciones: Alumno - Rol
 Alumno.belongsTo(Rol, { foreignKey: 'rol' });
 Rol.hasMany(Alumno, { foreignKey: 'rol' });
 
-// Definir relaciones: Alumno - Carrera
-Alumno.belongsTo(Carrera, { foreignKey: 'carrera' });
-Carrera.hasMany(Alumno, { foreignKey: 'carrera' });
+// Definir relaciones: Matriculacion - Alumno y Carrera
+Matriculacion.belongsTo(Alumno, { foreignKey: 'alumno' });
+Alumno.hasMany(Matriculacion, { foreignKey: 'alumno' });
+
+Matriculacion.belongsTo(Carrera, { foreignKey: 'carrera' });
+Carrera.hasMany(Matriculacion, { foreignKey: 'carrera' });
 
 // Definir relaciones: Intento - Alumno
 Intento.belongsTo(Alumno, { foreignKey: 'alumno' });
@@ -81,4 +85,4 @@ Aspecto.hasMany(Estadistica, { foreignKey: "aspecto" });
 
 
 
-export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, Estadistica, sequelize };
+export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, Estadistica, Matriculacion, sequelize };
