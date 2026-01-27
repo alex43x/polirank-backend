@@ -62,8 +62,10 @@ const getSectionLastStats = async (req, res) => {
       promedio: (stat.promedio / stat.count).toFixed(2),
     }));
 
-    const totalAverage = courseStats.reduce((acc, c) => acc + parseFloat(c.promedioGeneral), 0) / lastCursos.length;
     const totalReviews = courseStats.reduce((acc, c) => acc + c.totalReviewsForCurso, 0);
+    const totalAverage = totalReviews > 0 
+      ? (courseStats.reduce((acc, c) => acc + (parseFloat(c.promedioGeneral) * c.totalReviewsForCurso), 0) / totalReviews)
+      : 0;
 
     const response = {
       courses: lastCursos,
