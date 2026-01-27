@@ -18,11 +18,6 @@ const Alumno = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
-    carrera: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      field: "carrera",
-    },
     password: {
       type: DataTypes.TEXT,
       allowNull: false,
