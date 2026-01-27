@@ -5,6 +5,7 @@ import Matriculacion from "../models/enrollmentModel.js";
 import Aspecto from "../models/aspectModel.js";
 import ReviewCont from "../models/reviewCont.js";
 import ReviewCab from "../models/reviewCab.js";
+import Intento from "../models/triesModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -89,7 +90,12 @@ const getUserProfile = async (req, res) => {
       ],
     });
 
-    res.status(200).json({ student, reviews });
+    const tries = await Intento.findAndCountAll({
+      where: { alumno: currentUser.id },
+    });
+
+
+    res.status(200).json({ student, reviews, tries });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
