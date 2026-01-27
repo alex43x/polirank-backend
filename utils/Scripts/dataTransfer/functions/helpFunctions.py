@@ -5,8 +5,7 @@ from tabulate import tabulate
 import tkinter as tk
 from tkinter import filedialog
 import unicodedata
-
-
+from typing import List, Optional
 
 
 def limpiar_pantalla():
@@ -442,4 +441,90 @@ def extraer_primer_nombre_apellido(full_name):
     # Ejemplo: "Juan Gomez" -> "Juan Gomez"
     # Ejemplo: "Juan Gomez Perez" -> "Juan Gomez"
     return f"{partes[0]} {partes[1]}"
+
+
+def es_correo_estudiante(correo):
+    """
+    Verifica si un correo es de estudiante (@fpuna.edu.py)
+    """
+    if not correo:
+        return False
+    return '@fpuna.edu.py' in correo.lower()
+
+def estandarizar_nombre_carrera(ci,carrera):
+    """
+    Devuelve las carreras con el formato esperado por el programita.
+    Formato esperado: Siglas de las carreras separadas por comas (si mas de una).
+    """
+    # 1. Quita tildes, cambia caracteres blancos a ','
+    CARRERAS = ["IIN", "ISP", "IMK", "IEK", "IEL", "IAE", "ICM", "IEN", "LCIK", "LEL", "LCA", "LGH", "LCI"]
+    carrera = unicodedata.normalize('NFD', carrera)
+    carrera = ''.join(c for c in carrera if unicodedata.category(c) != 'Mn')
+    proceso = carrera.strip().replace("-",",").replace(" ",",").split(",")
+    out = []
+
+    # 2. Correcion de errores de ortografia comunes, prepara la salida
+    for s in proceso:
+        if s.upper() in CARRERAS:
+            out.append(s.upper())
+        elif s.upper()=="LICK":
+            out.append("LCIK")
+        elif s.upper()=="IIF":
+            out.append("IIN")
+        elif s.upper()=="LHG":
+            out.append("LGH") 
+    
+    if len(out)==0:
+        print(f"{ci}: Carrera no valida")
+    return ",".join(out)
+
+def filtrar_carreras(info):
+    """
+    Recibe un registro y devuelve el mismo con la carrera normalizada
+    """
+    # 0 = nombre , 1 = correo, 2 = ci , 3 = carreras
+    filtrado = []
+    for r in info:
+        if es_correo_estudiante(r[1]):
+            carrera = estandarizar_nombre_carrera(r[2],r[3])
+            nombre = " ".join([n.capitalize() for n in r[0].split()])
+            if carrera != "":
+                filtrado.append([nombre,r[1],r[2],carrera])
+    return filtrado
+
+def matriz_a_txt(matriz: List[List],
+    ruta_archivo: str,
+    separador: str = "|",
+    encabezados: Optional[List[str]] = None,
+    encoding: str = "utf-8",
+    tratar_none_como_vacio: bool = True
+):
+    """
+    Crea un archivo txt con el contenido de una matriz
+    Separador default: "|"
+    """
+    if not isinstance(matriz, list):
+        raise TypeError("El parámetro 'matriz' debe ser una lista de listas.")
+    for i, fila in enumerate(matriz):
+        if not isinstance(fila, list):
+            raise TypeError(f"Cada fila de 'matriz' debe ser una lista. Fila {i} no lo es.")
+
+    def elem_a_str(x):
+        if x is None and tratar_none_como_vacio:
+            return ""
+        return str(x)
+
+    # Abrir archivo y escribir
+    with open(ruta_archivo, "w", encoding=encoding, newline="\n") as f:
+        # escribir encabezados si se proporcionan
+        if encabezados is not None:
+            if not isinstance(encabezados, list) or not all(isinstance(h, str) for h in encabezados):
+                raise TypeError("Los 'encabezados' deben ser una lista de strings.")
+            f.write(separador.join(encabezados) + "\n")
+
+        # escribir cada fila de la matriz
+        for fila in matriz:
+            # convertir cada elemento a string y unir con el separador
+            linea = separador.join(elem_a_str(x) for x in fila)
+            f.write(linea + "\n")
 

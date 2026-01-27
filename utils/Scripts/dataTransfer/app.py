@@ -2,7 +2,7 @@ import os
 import psycopg2
 from dotenv import load_dotenv
 
-from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, limpiar_pantalla 
+from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, limpiar_pantalla, es_correo_estudiante, normalizar_carrera, filtrar_carreras, matriz_a_txt 
 from functions.appendDocs import insertDoc
 from functions.appendAsign import insertAsign
 from functions.appendSeccCur import insertSecciones
@@ -25,6 +25,7 @@ def menu_principal():
         print("[3] Insertar Usuarios")
         print("[4] Insertar Secciones y Cursos")
         print("[5] Insertar Mallas")
+        print("[6] Normalizar (genera un txt en la raiz del proyecto)")
         print("[0] Salir")
         print("===================================")
         
@@ -174,6 +175,22 @@ def menu_principal():
 
             input("\nPresiona ENTER para continuar...")
 
+        elif opcion == '6':
+            ARCHIVO = seleccion_archivo()
+            if not ARCHIVO: continue 
+            
+            HOJA = obtener_nombre_hoja(ARCHIVO)
+
+            FILA_DE_INICIO = 1
+            # 0 = nombre , 1 = correo, 2 = ci , 3 = carreras
+            COLUMNAS_OBJETIVO = [0,1,2,3] 
+            
+            intoData = procesar_excel_exacto(ARCHIVO, HOJA, COLUMNAS_OBJETIVO, FILA_DE_INICIO)
+
+            filtrado = filtrar_carreras(intoData)
+
+            matriz_a_txt(filtrado,"reporte_filtrado.txt")
+            
 
         elif opcion == '0':
             print("¡Hasta luego!")
