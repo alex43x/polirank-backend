@@ -129,6 +129,11 @@ def insertUsers(connection, intoData):
         return
 
     print(f"\nSe detectaron {len(usuarios_dict)} alumnos unicos para procesar.")
+    
+    # --- REPORTE DE USUARIOS YA EXISTENTES ---
+    usuarios_existentes = {}   # correo -> rol
+
+
     confirm = input(f"¿Deseas proceder con la insercion en la base de datos? (s/n): ").strip().lower()
     if confirm != 's':
         print("Operacion cancelada por el usuario.")
@@ -138,6 +143,16 @@ def insertUsers(connection, intoData):
     print("Reabriendo conexion para la insercion...")
     new_conn = get_db_connection()
     cursor = new_conn.cursor()
+
+    # --- DETECTAR USUARIOS YA EXISTENTES EN BD ---
+    cursor.execute(
+        "SELECT correo, rol FROM alumnos WHERE correo IN %s",
+        (tuple(usuarios_dict.keys()),)
+    )
+    usuarios_existentes = {correo: rol for correo, rol in cursor.fetchall()}
+    existentes_rol_4 = sum(1 for r in usuarios_existentes.values() if r == 4)
+    existentes_otro_rol = len(usuarios_existentes) - existentes_rol_4
+
     try:
         # 1. Insertar/Actualizar Alumnos
         print("Registrando informacion de alumnos...")
@@ -145,9 +160,15 @@ def insertUsers(connection, intoData):
         query_alumnos = """
             INSERT INTO alumnos (correo, nombre, password, rol)
             VALUES %s
-            ON CONFLICT (correo) DO UPDATE SET nombre = EXCLUDED.nombre
+            ON CONFLICT (correo) DO UPDATE SET
+                nombre = EXCLUDED.nombre,
+                password = CASE
+                    WHEN alumnos.rol = 4 THEN EXCLUDED.password
+                    ELSE alumnos.password
+                END
             RETURNING id, correo;
         """
+
         execute_values(cursor, query_alumnos, alumnos_data)
         
         # Recuperar IDs para las matriculaciones
@@ -187,6 +208,18 @@ def insertUsers(connection, intoData):
             for carr, total in sorted(stats_error.items()):
                 print(f" . {carr:<20}: {total} registros")
         
+        print(f"\nUSUARIOS QUE YA EXISTÍAN EN LA BASE DE DATOS:")
+        if not usuarios_existentes:
+            print(" - Ninguno")
+        else:
+            for correo, rol in sorted(usuarios_existentes.items()):
+                print(f" . {correo:<35} | rol actual: {rol}")
+
+            print("\nResumen de usuarios existentes:")
+            print(f" - Con rol 4 (password reseteado): {existentes_rol_4}")
+            print(f" - Con rol distinto de 4 (password intacto): {existentes_otro_rol}")
+
+
         print("\n" + "-" * 55)
         print(f"Total alumnos procesados: {len(usuarios_dict)}")
         if otros_dominios:
