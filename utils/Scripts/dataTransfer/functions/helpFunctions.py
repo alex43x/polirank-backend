@@ -5,7 +5,7 @@ from tabulate import tabulate
 import tkinter as tk
 from tkinter import filedialog
 import unicodedata
-from typing import List, Optional
+from typing import List, Optional, Any
 
 
 def limpiar_pantalla():
@@ -482,7 +482,7 @@ def estandarizar_nombre_carrera(carrera):
     
     return ",".join(out)
 
-def filtrar_carreras(info, ruta_invalidos="usuarios_no_validos.txt"):
+def filtrar_carreras(info, ruta_invalidos="usuarios_no_validos.txt") -> List[List[Any]]:
     """
     Recibe una lista de registros y devuelve la lista filtrada con la carrera normalizada.
     Además gestiona correctamente el archivo de usuarios no válidos.
@@ -562,3 +562,85 @@ def matriz_a_txt(matriz: List[List],
             linea = separador.join(elem_a_str(x) for x in fila)
             f.write(linea + "\n")
 
+def _abrir_dialogo_guardar(title: str = "Guardar archivo de Malla",
+                           initialfile: str = "malla.xlsx",
+                           defaultextension: str = ".xlsx") -> Optional[str]:
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes('-topmost', True)
+    ruta = filedialog.asksaveasfilename(
+        title=title,
+        initialfile=initialfile,
+        defaultextension=defaultextension,
+        filetypes=[
+            ("Archivos de Excel", "*.xlsx *.xls"),
+            ("Todos los archivos", "*.*")
+        ]
+    )
+    root.destroy()
+    return ruta if ruta else None
+
+def guardar_matriz_como_excel(
+    matriz: List[List[Any]],
+    ruta: Optional[str] = None,
+    tiene_encabezado: bool = False,
+    sheet_name: str = "Sheet1"
+) -> Optional[str]:
+    """
+    Guarda una matriz (lista de listas) en un archivo Excel usando openpyxl.
+    - matriz: lista de filas, cada fila es una lista de valores.
+    - ruta: si None, abre diálogo para elegir dónde guardar.
+    - tiene_encabezado: si True, la primera fila se usa como encabezado (se escribe igual).
+    - Devuelve la ruta donde se guardó o None si se canceló o hubo error.
+    """
+    # Validaciones básicas
+    if not isinstance(matriz, list) or len(matriz) == 0:
+        print("❌ La matriz debe ser una lista de listas no vacía.")
+        return None
+
+    # Normalizar filas y filtrar None
+    filas = [list(f) for f in matriz if f is not None]
+
+    if len(filas) == 0:
+        print("❌ No hay filas válidas en la matriz.")
+        return None
+
+    # Determinar número máximo de columnas
+    max_cols = max(len(r) for r in filas)
+
+    # Rellenar filas cortas con cadenas vacías
+    filas_normalizadas = []
+    for r in filas:
+        if len(r) < max_cols:
+            r = list(r) + [""] * (max_cols - len(r))
+        filas_normalizadas.append(r)
+
+    # Obtener ruta si no se proporcionó
+    if ruta is None:
+        ruta = _abrir_dialogo_guardar()
+        if ruta is None:
+            print("❌ No se seleccionó ninguna ruta de guardado.")
+            return None
+
+    # Crear workbook y hoja
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = sheet_name
+
+    # Escribir filas en la hoja
+    try:
+        for row_idx, fila in enumerate(filas_normalizadas, start=1):
+            for col_idx, valor in enumerate(fila, start=1):
+                ws.cell(row=row_idx, column=col_idx, value=valor)
+
+        # Asegurar extensión .xlsx
+        if not ruta.lower().endswith((".xlsx", ".xlsm", ".xltx", ".xltm")):
+            ruta = ruta + ".xlsx"
+
+        wb.save(ruta)
+        wb.close()
+        print(f"✅ Archivo guardado en: {ruta}")
+        return ruta
+    except Exception as e:
+        print(f"❌ Error al guardar el archivo: {e}")
+        return None

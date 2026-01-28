@@ -2,7 +2,7 @@ import os
 import psycopg2
 from dotenv import load_dotenv
 
-from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, limpiar_pantalla, filtrar_carreras, matriz_a_txt 
+from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, limpiar_pantalla, filtrar_carreras, guardar_matriz_como_excel 
 from functions.appendDocs import insertDoc
 from functions.appendAsign import insertAsign
 from functions.appendSeccCur import insertSecciones
@@ -25,7 +25,7 @@ def menu_principal():
         print("[3] Insertar Usuarios")
         print("[4] Insertar Secciones y Cursos")
         print("[5] Insertar Mallas")
-        print("[6] Normalizar (genera un txt en la raiz del proyecto)")
+        print("[6] Normalizar usuarios")
         print("[0] Salir")
         print("===================================")
         
@@ -189,7 +189,7 @@ def menu_principal():
 
             filtrado = filtrar_carreras(intoData)
 
-            matriz_a_txt(filtrado,"reporte_filtrado.txt")
+            guardar_matriz_como_excel(filtrado)
             
 
         elif opcion == '0':
