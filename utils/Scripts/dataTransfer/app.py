@@ -2,7 +2,7 @@ import os
 import psycopg2
 from dotenv import load_dotenv
 
-from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, limpiar_pantalla, es_correo_estudiante, normalizar_carrera, filtrar_carreras, matriz_a_txt 
+from functions.helpFunctions import procesar_excel_exacto, seleccion_archivo, obtener_nombre_hoja, limpiar_pantalla, filtrar_carreras, matriz_a_txt 
 from functions.appendDocs import insertDoc
 from functions.appendAsign import insertAsign
 from functions.appendSeccCur import insertSecciones

@@ -453,7 +453,7 @@ def es_correo_estudiante(correo):
         return False
     return '@fpuna.edu.py' in correo.lower()
 
-def estandarizar_nombre_carrera(ci,carrera):
+def estandarizar_nombre_carrera(carrera):
     """
     Devuelve las carreras con el formato esperado por el programita.
     Formato esperado: Siglas de las carreras separadas por comas (si mas de una).
@@ -462,7 +462,11 @@ def estandarizar_nombre_carrera(ci,carrera):
     CARRERAS = ["IIN", "ISP", "IMK", "IEK", "IEL", "IAE", "ICM", "IEN", "LCIK", "LEL", "LCA", "LGH", "LCI"]
     carrera = unicodedata.normalize('NFD', carrera)
     carrera = ''.join(c for c in carrera if unicodedata.category(c) != 'Mn')
-    proceso = carrera.strip().replace("-",",").replace(" ",",").split(",")
+    reemplazar = ['-','(',')',' ']
+    proceso = carrera.strip()
+    for c in reemplazar:
+        proceso = proceso.replace(c,',')
+    proceso = proceso.split(",")
     out = []
 
     # 2. Correcion de errores de ortografia comunes, prepara la salida
@@ -476,22 +480,50 @@ def estandarizar_nombre_carrera(ci,carrera):
         elif s.upper()=="LHG":
             out.append("LGH") 
     
-    if len(out)==0:
-        print(f"{ci}: Carrera no valida")
     return ",".join(out)
 
-def filtrar_carreras(info):
+def filtrar_carreras(info, ruta_invalidos="usuarios_no_validos.txt"):
     """
-    Recibe un registro y devuelve el mismo con la carrera normalizada
+    Recibe una lista de registros y devuelve la lista filtrada con la carrera normalizada.
+    Además gestiona correctamente el archivo de usuarios no válidos.
+    Cada registro `r` se asume como: [nombre, correo, ci, carreras]
     """
-    # 0 = nombre , 1 = correo, 2 = ci , 3 = carreras
+
+    def elem_a_str(x):
+        if x is None:
+            return ""
+        return str(x)
+
     filtrado = []
+    invalidos = []
+
     for r in info:
-        if es_correo_estudiante(r[1]):
-            carrera = estandarizar_nombre_carrera(r[2],r[3])
-            nombre = " ".join([n.capitalize() for n in r[0].split()])
-            if carrera != "":
-                filtrado.append([nombre,r[1],r[2],carrera])
+        # proteger contra registros mal formados
+        if len(r) < 4:
+            invalidos.append(r)
+            continue
+
+        correo = r[1]
+        if es_correo_estudiante(correo):
+            carrera = estandarizar_nombre_carrera(r[3])
+            nombre = " ".join([n.capitalize() for n in r[0].split()]) if r[0] else ""
+            if carrera:
+                filtrado.append([nombre, correo, r[2], carrera])
+            else:
+                # correo válido pero no se pudo normalizar la carrera
+                invalidos.append(r)
+        else:
+            # correo no válido
+            invalidos.append(r)
+
+    # Escribir todos los usuarios no válidos de una sola vez.
+    # Usamos "w" para sobrescribir con el conjunto actual; cambiar a "a" para añadir.
+    if invalidos:
+        with open(ruta_invalidos, "w", encoding="utf-8", newline="\n") as f:
+            for r in invalidos:
+                linea = "|".join(elem_a_str(x) for x in r)
+                f.write(linea + "\n")
+
     return filtrado
 
 def matriz_a_txt(matriz: List[List],
