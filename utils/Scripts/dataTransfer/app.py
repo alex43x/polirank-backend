@@ -176,6 +176,10 @@ def menu_principal():
             input("\nPresiona ENTER para continuar...")
 
         elif opcion == '6':
+            """
+            FORMATO ESPERADO: archivo excel con columnas
+            nombre | correo | ci | carreras
+            """
             ARCHIVO = seleccion_archivo()
             if not ARCHIVO: continue 
             
