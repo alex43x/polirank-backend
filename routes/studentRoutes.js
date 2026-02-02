@@ -1,13 +1,12 @@
 import express from "express";
 import studentController from "../controllers/studentController.js";
-import roleMiddleware from "../middlewares/role.js";
 
 const studentRoutes = express.Router();
 
 studentRoutes.get("/", 
   /* #swagger.tags = ['Alumnos']
      #swagger.summary = 'Obtener todos los estudiantes'
-     #swagger.description = 'Obtener la lista de todos los estudiantes con búsqueda, filtros y paginación. Solo ADMIN puede ver todos los estudiantes.'
+     #swagger.description = 'Obtener la lista de todos los estudiantes con búsqueda, filtros y paginación.'
      #swagger.parameters['page'] = {
        in: 'query',
        description: 'Número de página (default: 1)',
@@ -42,13 +41,13 @@ studentRoutes.get("/",
        description: "Lista de estudiantes obtenida exitosamente"
      }
   */
-  studentController.getAllStudents
+  (req, res) => studentController.getAllStudents(req, res)
 );
 
 studentRoutes.get("/:id", 
   /* #swagger.tags = ['Alumnos']
      #swagger.summary = 'Obtener estudiante por ID'
-     #swagger.description = 'Obtener un estudiante específico por su ID. Solo ADMIN puede ver la información de estudiantes.'
+     #swagger.description = 'Obtener un estudiante específico por su ID.'
      #swagger.parameters['id'] = {
        in: 'path',
        description: 'ID del estudiante',
@@ -62,13 +61,13 @@ studentRoutes.get("/:id",
        description: "Usuario no encontrado"
      }
   */
-  studentController.getStudentbyId
+  (req, res) => studentController.getStudentById(req, res)
 );
 
 studentRoutes.get("/:id/reviews", 
   /* #swagger.tags = ['Alumnos']
      #swagger.summary = 'Obtener reviews de un estudiante'
-     #swagger.description = 'Obtener todas las reviews creadas por un estudiante. Solo ADMIN puede ver las reviews de cualquier estudiante.'
+     #swagger.description = 'Obtener todas las reviews creadas por un estudiante.'
      #swagger.parameters['id'] = {
        in: 'path',
        description: 'ID del estudiante',
@@ -82,13 +81,13 @@ studentRoutes.get("/:id/reviews",
        description: "No se encontraron reseñas para este usuario"
      }
   */
-  studentController.getStudentReviews
+  (req, res) => studentController.getStudentReviews(req, res)
 );
 
-studentRoutes.post("/", roleMiddleware(['ADMIN']),
+studentRoutes.post("/",
   /* #swagger.tags = ['Alumnos']
      #swagger.summary = 'Crear un nuevo estudiante'
-     #swagger.description = 'Crear un nuevo estudiante. Solo ADMIN puede crear estudiantes.'
+     #swagger.description = 'Crear un nuevo estudiante. Solo ADMIN.'
      #swagger.requestBody = {
        required: true,
        content: {
@@ -114,18 +113,16 @@ studentRoutes.post("/", roleMiddleware(['ADMIN']),
                  example: "password123",
                  description: "Contraseña del estudiante"
                },
-               carreras: {
-                 type: "array",
-                 items: {
-                   type: "integer"
-                 },
-                 example: [1, 3, 5],
-                 description: "IDs de las carreras (opcional)"
-               },
                rol: {
                  type: "integer",
                  example: 2,
                  description: "ID del rol"
+               },
+               matriculaciones: {
+                 type: "array",
+                 items: { type: "integer" },
+                 example: [1, 2],
+                 description: "Array de IDs de carreras"
                }
              }
            }
@@ -138,20 +135,14 @@ studentRoutes.post("/", roleMiddleware(['ADMIN']),
      #swagger.responses[400] = {
        description: "Faltan campos requeridos"
      }
-     #swagger.responses[401] = {
-       description: "No autenticado"
-     }
-     #swagger.responses[403] = {
-       description: "Sin permisos - Solo ADMIN"
-     }
   */
-  studentController.createStudent
+  (req, res) => studentController.createStudent(req, res)
 );
 
-studentRoutes.put("/:id", roleMiddleware(['ADMIN']),
+studentRoutes.put("/:id",
   /* #swagger.tags = ['Alumnos']
-     #swagger.summary = 'Actualizar un estudiante'
-     #swagger.description = 'Actualizar la información de un estudiante existente. Solo ADMIN puede actualizar estudiantes.'
+     #swagger.summary = 'Actualizar datos del estudiante'
+     #swagger.description = 'Actualizar nombre y correo de un estudiante. Solo ADMIN.'
      #swagger.parameters['id'] = {
        in: 'path',
        description: 'ID del estudiante a actualizar',
@@ -184,23 +175,17 @@ studentRoutes.put("/:id", roleMiddleware(['ADMIN']),
      #swagger.responses[200] = {
        description: "Estudiante actualizado exitosamente"
      }
-     #swagger.responses[401] = {
-       description: "No autenticado"
-     }
-     #swagger.responses[403] = {
-       description: "Sin permisos - Solo ADMIN"
-     }
      #swagger.responses[404] = {
        description: "Usuario no encontrado"
      }
   */
-  studentController.updateStudent
+  (req, res) => studentController.updateStudent(req, res)
 );
 
-studentRoutes.delete("/:id", roleMiddleware(['ADMIN']),
+studentRoutes.delete("/:id",
   /* #swagger.tags = ['Alumnos']
      #swagger.summary = 'Eliminar un estudiante'
-     #swagger.description = 'Eliminar un estudiante existente. Solo ADMIN puede eliminar estudiantes.'
+     #swagger.description = 'Eliminar un estudiante existente. Solo ADMIN.'
      #swagger.parameters['id'] = {
        in: 'path',
        description: 'ID del estudiante a eliminar',
@@ -210,17 +195,11 @@ studentRoutes.delete("/:id", roleMiddleware(['ADMIN']),
      #swagger.responses[200] = {
        description: "Usuario eliminado"
      }
-     #swagger.responses[401] = {
-       description: "No autenticado"
-     }
-     #swagger.responses[403] = {
-       description: "Sin permisos - Solo ADMIN"
-     }
      #swagger.responses[404] = {
        description: "Usuario no encontrado"
      }
   */
-  studentController.deleteStudent
+  (req, res) => studentController.deleteStudent(req, res)
 );
 
 export default studentRoutes;
