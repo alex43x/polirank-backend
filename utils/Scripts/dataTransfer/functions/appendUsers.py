@@ -1,236 +1,236 @@
 import bcrypt
 import psycopg2
+import os
 from psycopg2.extras import execute_values
-
 from functions.helpFunctions import extraer_primer_nombre_apellido
 
-def normalizar_carrera(carrera_raw):
+def get_db_connection():
+    """Helper to get a fresh DB connection from environment variables."""
+    return psycopg2.connect(
+        host=os.getenv("PG_HOST"),
+        database=os.getenv("PG_DATABASE"),
+        user=os.getenv("PG_USER"),
+        password=os.getenv("PG_PASSWORD"),
+        port=os.getenv("PG_PORT"),
+        client_encoding='win1252'
+    )
 
+def normalizar_carrera(carrera_raw):
     """
-    Normaliza carreras con múltiples valores separados por comas, guiones o espacios.
-    
-    Reglas:
-    - Si contiene "IIN" pero no "LCIK", retorna "IIN"
-    - Si contiene "LCIK" pero no "IIN", retorna "LCIK"
-    - Si contiene ambos "LCIK" e "IIN", retorna el que aparece primero
-    - Maneja separadores: comas (,), guiones (-), espacios
-    - Normaliza a mayúsculas
-    
-    Ejemplos:
-    - "ISP, IIN" -> "IIN"
-    - "IEK,LCIK" -> "LCIK"
-    - "LCIK, IIN" -> "LCIK"
-    - "IIN,LCIK" -> "IIN"
-    - "LCIk" -> "LCIK"
+    Normaliza carreras y las separa si vienen múltiples valores.
+    Retorna una lista de strings normalizados.
+    Ejemplo: "IIN, LCIK" -> ["IIN", "LCIK"]
     """
     if not carrera_raw:
-        return "SIN CARRERA"
+        return []
     
-    carrera = carrera_raw.strip()
-    
-    # Separar por comas, guiones o espacios múltiples
+    # Limpiar y separar por comas, punto y coma, o barras. 
     import re
-    partes = [p.strip().upper() for p in re.split(r'[,\-\s]+', carrera) if p.strip()]
+    partes = [p.strip().upper() for p in re.split(r'[;,/]+', str(carrera_raw)) if p.strip()]
     
-    if len(partes) > 1:
-        tiene_iin = any("IIN" in p for p in partes)
-        tiene_lcik = any("LCIK" in p for p in partes)
-        
-        if tiene_iin and tiene_lcik:
-            # Retornar el primero que aparezca (IIN o LCIK)
-            for p in partes:
-                if "IIN" == p or "LCIK" == p:
-                    return p
-        elif tiene_iin:
-            # Retornar solo IIN
-            return "IIN"
-        elif tiene_lcik:
-            # Retornar solo LCIK
-            return "LCIK"
-    else:
-        # Una sola parte, normalizar mayúsculas
-        parte_upper = partes[0] if partes else carrera.upper()
-        if "IIN" in parte_upper:
-            return "IIN"
-        elif "LCIK" in parte_upper:
-            return "LCIK"
-    
-    return carrera.upper()
+    resultados = []
+    for parte in partes:
+        resultados.append(parte)
+            
+    return list(set(resultados)) # Retornar únicos
 
 def insertUsers(connection, intoData):
     """
-    Filtra los usuarios con terminación @fpuna.edu.py y realiza una separación por carrera,
-    mostrando las estadísticas en consola.
-    
-    Según las indicaciones en app.py:
-    # 0= Nombre y Apellido 1= Correo 2= CI 3= Carrera
+    Procesa alumnos del Excel:
+    1. Registra al alumno en 'alumnos' (id_rol = 4 por defecto).
+    2. Registra sus carreras en 'matriculaciones'.
+    3. Reporta estadísticas detalladas por carrera.
     """
     
     if not intoData:
-        print("⚠️ No hay datos para procesar.")
+        print("No hay datos para procesar.")
         return
 
-    # --- CARGA DINÁMICA DE CARRERAS DESDE LA BD ---
+    # --- CARGA DINAMICA DE CARRERAS DESDE LA BD ---
     cursor = connection.cursor()
     mapa_carreras = {}
     try:
         cursor.execute("SELECT id, nombre FROM carreras")
         mapa_carreras = {str(row[1]).strip().upper(): row[0] for row in cursor.fetchall()}
-        if not mapa_carreras:
-            print("⚠️ Advertencia: La tabla 'carreras' está vacía en la base de datos.")
     except Exception as e:
-        print(f"❌ Error al cargar carreras de la BD: {e}")
+        print(f"Error al cargar carreras: {e}")
+        return
     finally:
         cursor.close()
+        # Cerramos la conexion inicial para evitar timeouts durante el procesamiento lento
+        print("Cerrando conexion inicial para procesar datos...")
+        connection.close()
 
-    # Diccionario para agrupar por carrera encontrada en el Excel
-    carreras_count = {}
-    total_revisados = len(intoData)
-    total_fpuna = 0
-    total_insertables = 0
-    correos_no_fpuna = []  # Lista para correos que NO son @fpuna.edu.py
-    filas_descartadas = []  # Lista para almacenar el contenido de las filas descartadas
+    # Agrupamos datos por correo para manejar multiples carreras
+    usuarios_dict = {}
     
-    # Lista para datos a insertar en la base de datos
-    # Formato: (correo, nombre, carrera, password, rol)
-    alumnos_a_insertar = []
+    # Para estadísticas de reporte
+    stats_ok = {}      # carrera -> count registrados/validados
+    stats_error = {}   # carrera -> count no existentes en BD
+    otros_dominios = []
     
-    # El correo está en la columna índice 1, la carrera en la índice 3, CI en el 2
-    for fila in intoData:
+    print(f"Analizando {len(intoData)} filas y generando hashes (esto puede tomar unos minutos)...")
+    import sys
+    sys.stdout.flush()
+
+    for idx, fila in enumerate(intoData):
         if len(fila) > 1 and fila[1]:
             correo = str(fila[1]).strip().lower()
             
-            # Validar que sea un correo válido (debe contener @)
-            # y que no sea la fila de encabezado
+            # Filtro básico: No procesar encabezados o vacíos
             if not correo or '@' not in correo or correo in ['email', 'correo', 'e-mail']:
-                filas_descartadas.append(fila)
                 continue
             
-            if correo.endswith("@fpuna.edu.py"):
-                total_fpuna += 1
-                carrera_raw = str(fila[3]).strip() if len(fila) > 3 and fila[3] else ""
-                
-                # Normalizar la carrera (simplificar múltiples valores)
-                carrera_normalizada = normalizar_carrera(carrera_raw)
-                carrera_up = carrera_normalizada.upper()
-                
-                # --- PREPARACIÓN PARA INSERCIÓN DINÁMICA ---
-                # Verificamos si la carrera normalizada existe en el mapa de la BD
-                id_carrera = mapa_carreras.get(carrera_up)
-                
-                if id_carrera:
-                    total_insertables += 1
-                    nombre_raw = str(fila[0]).strip() if fila[0] else "Sin Nombre"
-                    # Extraer solo primer nombre y primer apellido
-                    nombre = extraer_primer_nombre_apellido(nombre_raw)
-                    
-                    ci = str(fila[2]).strip() if len(fila) > 2 and fila[2] else "12345" # Default if CI missing
-                    
-                    # Rol 4 -> INACTIVE 
-                    id_rol = 4
-                    
-                    # Password inicial: Prefijo del correo antes del @
-                    password_raw = correo.split('@')[0]
-                    
-                    # Hasheo con bcrypt (12 rounds para coincidir con el backend)
-                    # En Python bcrypt.hashpw devuelve bytes, decodificamos a utf-8 para la DB
-                    salt = bcrypt.gensalt(12)
-                    hashed_password = bcrypt.hashpw(password_raw.encode('utf-8'), salt).decode('utf-8')
-                    
-                    alumnos_a_insertar.append((correo, nombre, id_carrera, hashed_password, id_rol))
-                
-                if carrera_normalizada in carreras_count:
-                    carreras_count[carrera_normalizada] += 1
-                else:
-                    carreras_count[carrera_normalizada] = 1
-            else:
-                # Correo que NO termina en @fpuna.edu.py
-                nombre = str(fila[0]).strip() if fila[0] else "N/A"
-                correos_no_fpuna.append((nombre, correo))
-        else:
-            # Fila sin correo (columna vacía o fila incompleta)
-            filas_descartadas.append(fila)
-
-                
-    print("\n" + "="*50)
-    print(f"{'REPASO DE USUARIOS @FPUNA.EDU.PY':^50}")
-    print("="*50)
-    
-    if not carreras_count:
-        print("No se encontraron usuarios con el dominio @fpuna.edu.py")
-    else:
-        # Ordenar carreras por nombre para mejor visualización
-        for carrera in sorted(carreras_count.keys()):
-            carrera_up = carrera.upper()
-            # Filtrar solo carreras que existen en la BD o SIN CARRERA
-            if carrera_up in mapa_carreras or carrera_up == "SIN CARRERA":
-                cantidad = carreras_count[carrera]
-                icon = "⚡" if carrera_up in mapa_carreras else "❓"
-                print(f"{icon} {carrera:<35} | {cantidad:>5} usuarios")
+            # Filtro de dominio institucional
+            if not correo.endswith("@fpuna.edu.py"):
+                otros_dominios.append(correo)
+                continue
             
-    print("-" * 50)
-    print(f"📧 Total @fpuna.edu.py: {total_fpuna}")
-    print(f"✨ Total alumnos aptos para insertar: {total_insertables}")
-    print(f"📊 Total revisados en Excel: {total_revisados}")
-    if len(filas_descartadas) > 0:
-        print(f"⚠️  Filas descartadas (sin correo válido): {len(filas_descartadas)}")
-    print("="*50 + "\n")
-    
-    # --- PROCESO DE INSERCIÓN EN BASE DE DATOS ---
-    if alumnos_a_insertar:
-        print(f"🔄 Se prepararon {len(alumnos_a_insertar)} alumnos para insertar.")
-        confirmacion = input(f"¿Deseas insertar estos {len(alumnos_a_insertar)} alumnos en la base de datos? (s/n): ").strip().lower()
+            nombre_raw = str(fila[0]).strip() if fila[0] else "Sin Nombre"
+            nombre = extraer_primer_nombre_apellido(nombre_raw)
+            carrera_raw = str(fila[3]).strip() if len(fila) > 3 and fila[3] else ""
+            
+            # Procesar posibles múltiples carreras (ej: "IIN, LCIK")
+            carreras_encontradas = normalizar_carrera(carrera_raw)
+
+            if correo not in usuarios_dict:
+                # Generación de contraseña inicial (prefijo del correo)
+                pwd_raw = correo.split('@')[0]
+                salt = bcrypt.gensalt(12)
+                hashed_pwd = bcrypt.hashpw(pwd_raw.encode('utf-8'), salt).decode('utf-8')
+                
+                usuarios_dict[correo] = {
+                    'nombre': nombre,
+                    'password': hashed_pwd,
+                    'rol': 4, # Rol 4 por defecto
+                    'carreras_ids': set()
+                }
+            
+            # Validar carreras contra la BD
+            for c_norm in carreras_encontradas:
+                id_carrera = mapa_carreras.get(c_norm)
+                if id_carrera:
+                    usuarios_dict[correo]['carreras_ids'].add(id_carrera)
+                    stats_ok[c_norm] = stats_ok.get(c_norm, 0) + 1
+                else:
+                    stats_error[c_norm] = stats_error.get(c_norm, 0) + 1
         
-        if confirmacion == 's':
-            cursor = connection.cursor()
-            try:
-                print("📤 Insertando alumnos en la tabla 'alumnos'...")
-                
-                # Query con ON CONFLICT para evitar correos duplicados
-                query = """
-                    INSERT INTO alumnos (correo, nombre, carrera, password, rol)
-                    VALUES %s
-                    ON CONFLICT (correo) DO NOTHING
-                    RETURNING id;
-                """
-                
-                # Usamos execute_values para eficiencia
-                insertados = execute_values(cursor, query, alumnos_a_insertar, fetch=True)
-                connection.commit()
-                
-                cantidad_insertada = len(insertados) if insertados else 0
-                print(f"✅ Inserción finalizada: {cantidad_insertada} alumnos insertados.")
-                if cantidad_insertada < len(alumnos_a_insertar):
-                    print(f"⚠️  {len(alumnos_a_insertar) - cantidad_insertada} registros fueron omitidos (ya existían en la BD).")
-                
-            except Exception as e:
-                connection.rollback()
-                print(f"❌ Error durante la inserción: {e}")
-            finally:
-                cursor.close()
+        # Log progress every 100 processed rows
+        if idx % 100 == 0:
+            if idx == 0:
+                print(" > Iniciando procesamiento de filas...")
+            else:
+                print(f" > Procesando fila {idx} de {len(intoData)}...")
+            import sys
+            sys.stdout.flush()
+
+    if not usuarios_dict:
+        print("No se encontraron usuarios aptos para insertar (@fpuna.edu.py).")
+        return
+
+    print(f"\nSe detectaron {len(usuarios_dict)} alumnos unicos para procesar.")
+    
+    # --- REPORTE DE USUARIOS YA EXISTENTES ---
+    usuarios_existentes = {}   # correo -> rol
+
+
+    confirm = input(f"¿Deseas proceder con la insercion en la base de datos? (s/n): ").strip().lower()
+    if confirm != 's':
+        print("Operacion cancelada por el usuario.")
+        return
+
+    # --- REAPERTURA DE CONEXION ---
+    print("Reabriendo conexion para la insercion...")
+    new_conn = get_db_connection()
+    cursor = new_conn.cursor()
+
+    # --- DETECTAR USUARIOS YA EXISTENTES EN BD ---
+    cursor.execute(
+        "SELECT correo, rol FROM alumnos WHERE correo IN %s",
+        (tuple(usuarios_dict.keys()),)
+    )
+    usuarios_existentes = {correo: rol for correo, rol in cursor.fetchall()}
+    existentes_rol_4 = sum(1 for r in usuarios_existentes.values() if r == 4)
+    existentes_otro_rol = len(usuarios_existentes) - existentes_rol_4
+
+    try:
+        # 1. Insertar/Actualizar Alumnos
+        print("Registrando informacion de alumnos...")
+        alumnos_data = [(c, d['nombre'], d['password'], d['rol']) for c, d in usuarios_dict.items()]
+        query_alumnos = """
+            INSERT INTO alumnos (correo, nombre, password, rol)
+            VALUES %s
+            ON CONFLICT (correo) DO UPDATE SET
+                nombre = EXCLUDED.nombre,
+                password = CASE
+                    WHEN alumnos.rol = 4 THEN EXCLUDED.password
+                    ELSE alumnos.password
+                END
+            RETURNING id, correo;
+        """
+
+        execute_values(cursor, query_alumnos, alumnos_data)
+        
+        # Recuperar IDs para las matriculaciones
+        cursor.execute("SELECT id, correo FROM alumnos WHERE correo IN %s", (tuple(usuarios_dict.keys()),))
+        mapa_ids = {correo: uid for uid, correo in cursor.fetchall()}
+
+        # 2. Insertar Matriculaciones
+        print("Vinculando alumnos con sus carreras...")
+        matriculas_data = []
+        for correo, uid in mapa_ids.items():
+            for id_carrera in usuarios_dict[correo]['carreras_ids']:
+                matriculas_data.append((uid, id_carrera))
+        
+        if matriculas_data:
+            query_mat = """
+                INSERT INTO matriculaciones (alumno, carrera)
+                VALUES %s
+                ON CONFLICT (alumno, carrera) DO NOTHING;
+            """
+            execute_values(cursor, query_mat, matriculas_data)
+
+        new_conn.commit()
+        
+        # --- REPORTE DETALLADO ---
+        print("\n" + "="*55)
+        print(f"{'RESUMEN DE PROCESAMIENTO':^55}")
+        print("="*55)
+        
+        print(f"\nCARRERAS REGISTRADAS CON EXITO:")
+        if not stats_ok:
+            print(" - Ninguna")
+        for carr, total in sorted(stats_ok.items()):
+            print(f" . {carr:<20}: {total} registros")
+            
+        if stats_error:
+            print(f"\nCARRERAS NO ENCONTRADAS EN BD (Omitidas):")
+            for carr, total in sorted(stats_error.items()):
+                print(f" . {carr:<20}: {total} registros")
+        
+        print(f"\nUSUARIOS QUE YA EXISTÍAN EN LA BASE DE DATOS:")
+        if not usuarios_existentes:
+            print(" - Ninguno")
         else:
-            print("⚠️ Inserción cancelada por el usuario.")
-    
-    # Mostrar correos que NO son @fpuna.edu.py
-    if correos_no_fpuna:
-        print("\n" + "="*60)
-        print(f"{'CORREOS QUE NO SON @FPUNA.EDU.PY':^60}")
-        print("="*60)
-        print("-" * 60)
-        print(f"📮 Total otros dominios: {len(correos_no_fpuna)}")
-        print("="*60 + "\n")
+            for correo, rol in sorted(usuarios_existentes.items()):
+                print(f" . {correo:<35} | rol actual: {rol}")
 
-    # Mostrar filas descartadas
-    if filas_descartadas:
-        print("\n" + "="*60)
-        print(f"{'DETALLE DE FILAS DESCARTADAS':^60}")
-        print("="*60)
-        for i, fila in enumerate(filas_descartadas, 1):
-            if i <= 10: # Solo mostrar las primeras 10 para no saturar
-                print(f"Row {i}: {fila}")
-        if len(filas_descartadas) > 10:
-            print(f"... y {len(filas_descartadas) - 10} filas más.")
-        print("="*60 + "\n")
+            print("\nResumen de usuarios existentes:")
+            print(f" - Con rol 4 (password reseteado): {existentes_rol_4}")
+            print(f" - Con rol distinto de 4 (password intacto): {existentes_otro_rol}")
 
-    
 
+        print("\n" + "-" * 55)
+        print(f"Total alumnos procesados: {len(usuarios_dict)}")
+        if otros_dominios:
+            print(f"Correos omitidos (externos): {len(otros_dominios)}")
+        print("="*55 + "\n")
+        
+        print("Proceso finalizado correctamente.")
+        
+    except Exception as e:
+        new_conn.rollback()
+        print(f"Error critico durante la insercion: {e}")
+    finally:
+        cursor.close()
+        new_conn.close()
