@@ -60,7 +60,12 @@ const getTrybyId = async (req, res) => {
 
 const createTry = async (req, res) => {
     const alumno = req.user.id;
+    const rol = req.user.rol.nombre;
     const { asignatura, valor } = req.body;
+
+    if (!["ADMIN", "STUDENT"].includes(rol)) {
+      return res.status(403).json({ error: "No tienes permiso para registrar intentos" });
+    }
 
     if (!alumno || !asignatura || !valor) {
       console.log(alumno, asignatura, valor);
