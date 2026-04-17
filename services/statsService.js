@@ -36,13 +36,16 @@ const recalculateCourseStats = async (reviewCab) => {
         const promedio = parseFloat(result.promedio || 0).toFixed(2);
         const cantidad = parseInt(result.cantidad || 0, 10);
 
+
         // Upsert en review_stats
         await Stats.upsert({
-        curso: reviewExists.curso,
-        aspecto: aspecto.id,
-        promedio,
-        cantidad,
-        updated_at: new Date(),
+          curso: reviewExists.curso,
+          aspecto: aspecto.id,
+          promedio,
+          cantidad,
+          updated_at: new Date(),
+        }, {
+          conflictFields: ['curso', 'aspecto'],
         });
         }
 };

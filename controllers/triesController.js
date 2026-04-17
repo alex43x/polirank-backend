@@ -72,6 +72,18 @@ const createTry = async (req, res) => {
         return res.status(404).json({ error: "La asignatura no existe" });
     }
 
+    // Validar intento duplicado
+    const existingTry = await Intento.findOne({
+        where: {
+        alumno,
+        asignatura,
+        },
+    });
+
+    if (existingTry) {
+    return res.status(400).json({ error: "El intento ya existe para este alumno y asignatura" });
+    }
+
     try {
         const newTry = await Intento.create({
         alumno,

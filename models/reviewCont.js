@@ -15,12 +15,16 @@ const ReviewCont = sequelize.define("ReviewCont", {
         await recalculateCourseStats(reviewCont.revcab);
       },
 
-      afterUpdate: async (reviewCont, options) => {
-        await recalculateCourseStats(reviewCont.revcab);
+      afterBulkUpdate: async (options) => {
+        if (options.where && options.where.revcab) {
+          await recalculateCourseStats(options.where.revcab);
+        }
       },
 
-      afterDestroy: async (reviewCont, options) => {
-        await recalculateCourseStats(reviewCont.revcab);
+      afterBulkDestroy: async (options) => {
+        if (options.where && options.where.revcab) {
+          await recalculateCourseStats(options.where.revcab);
+        }
       },
     },
 });
