@@ -1,0 +1,49 @@
+{
+    "docentes": {
+        "hoja": "Docentes",
+        "columnas": {
+            "nombre": "Nombre Completo",
+            "correo": "Correo Electrónico",
+            "asignatura": "Asignatura a enseñar"
+        },
+        "fila_inicio": 0
+    },
+    "asignaturas": {
+        "hoja": "Asignaturas",
+        "columnas": {
+            "titulo": "Asignatura",
+            "departamento": "Departamento"
+        },
+        "fila_inicio": 0
+    },
+    "usuarios": {
+        "hoja": "Usuarios",
+        "columnas": {
+            "nombre": "Nombre",
+            "correo": "Correo",
+            "ci": "CI",
+            "carreras": "Carrera"
+        },
+        "dominio_permitido": "@fpuna.edu.py",
+        "fila_inicio": 0
+    },
+    "secciones": {
+        "hoja": "Secciones_y_Cursos",
+        "columnas": {
+            "docente_nombres": "Nombres",
+            "docente_apellidos": "Apellidos",
+            "correo": "Correos",
+            "asignatura": "Asignatura"
+        },
+        "fila_inicio": 11
+    },
+    "malla": {
+        "hoja": "Malla",
+        "columnas": {
+            "asignatura": "Asignatura",
+            "carrera": "Carrera",
+            "semestre": "Semestre"
+        },
+        "fila_inicio": 0
+    }
+}
