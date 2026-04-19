@@ -33,7 +33,7 @@ const swaggerFile = JSON.parse(
 /* Rutas */
 app.use('/auth', authRoutes);
 app.use('/alumnos', authMiddleware, roleMiddleware(['ADMIN']), studentRoutes);
-/app.use('/materias', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT', 'GUEST']), subjectRoutes);
+app.use('/materias', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT', 'GUEST']), subjectRoutes);
 app.use('/cursos', authMiddleware, roleMiddleware(['ADMIN']), courseRoutes);
 app.use('/sections', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT', 'GUEST']), sectionRoutes);
 app.use('/reviews', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT', 'GUEST']), reviewRoutes);
