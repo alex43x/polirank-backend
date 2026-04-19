@@ -33,11 +33,11 @@ const swaggerFile = JSON.parse(
 /* Rutas */
 app.use('/auth', authRoutes);
 app.use('/alumnos', authMiddleware, roleMiddleware(['ADMIN']), studentRoutes);
-app.use('/materias', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), subjectRoutes);
+app.use('/materias', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT', 'GUEST']), subjectRoutes);
 app.use('/cursos', authMiddleware, roleMiddleware(['ADMIN']), courseRoutes);
-app.use('/sections', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), sectionRoutes);
-app.use('/reviews', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), reviewRoutes);
-app.use('/intentos', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT']), triesRoutes);
+app.use('/sections', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT', 'GUEST']), sectionRoutes);
+app.use('/reviews', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT', 'GUEST']), reviewRoutes);
+app.use('/intentos', authMiddleware, roleMiddleware(['ADMIN', 'STUDENT', 'GUEST']), triesRoutes);
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 app.get('/', (request, response) => {
   response.json('Hello world')

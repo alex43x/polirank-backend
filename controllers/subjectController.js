@@ -80,7 +80,8 @@ const getAllSubjects = async (req, res) => {
         break;
 
       case "STUDENT":
-        // STUDENT solo puede ver las materias de su carrera (desde header X-Carrera-Id)
+      case "GUEST":
+        // STUDENT y GUEST solo pueden ver las materias de la carrera seleccionada (desde header X-Carrera-Id)
         if (!req.carreraId) {
           return res.status(400).json({ error: "Se requiere X-Carrera-Id header" });
         }
@@ -147,8 +148,8 @@ const getSubjectbyId = async (req, res) => {
   try {
     const currentUser = req.user;
 
-    if (currentUser.rol.nombre === "STUDENT") {
-      // Verificar que la materia pertenezca a la carrera del estudiante
+    if (currentUser.rol.nombre === "STUDENT" || currentUser.rol.nombre === "GUEST") {
+      // Verificar que la materia pertenezca a la carrera del estudiante/invitado
       if (!req.carreraId) {
         return res.status(400).json({ error: "Se requiere X-Carrera-Id header" });
       }
@@ -190,7 +191,7 @@ const getSectionsBySubjectId = async (req, res) => {
   try {
     const currentUser = req.user;
 
-    if (currentUser.rol.nombre === "STUDENT") {
+    if (currentUser.rol.nombre === "STUDENT" || currentUser.rol.nombre === "GUEST") {
       if (!req.carreraId) {
         return res.status(400).json({ error: "Se requiere X-Carrera-Id header" });
       }
