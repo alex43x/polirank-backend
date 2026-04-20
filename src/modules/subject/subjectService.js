@@ -44,6 +44,7 @@ export async function getAllSubjects({ page = 1, limit = 10, search, dpto_id, ca
       break;
 
     case 'STUDENT':
+    case 'GUEST':
       if (!carreraId) {
         throw new AppError(ErrorCodes.VALIDATION_ERROR.code, 400, 'Se requiere X-Carrera-Id header');
       }
@@ -68,7 +69,7 @@ export async function getAllSubjects({ page = 1, limit = 10, search, dpto_id, ca
 }
 
 export async function getSubjectById(id, currentUser, carreraId) {
-  if (currentUser.rol.nombre === 'STUDENT') {
+  if (['STUDENT', 'GUEST'].includes(currentUser.rol.nombre)) {
     if (!carreraId) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR.code, 400, 'Se requiere X-Carrera-Id header');
     }
@@ -87,7 +88,7 @@ export async function getSubjectById(id, currentUser, carreraId) {
 }
 
 export async function getSectionsBySubjectId(id, currentUser, carreraId) {
-  if (currentUser.rol.nombre === 'STUDENT') {
+  if (['STUDENT', 'GUEST'].includes(currentUser.rol.nombre)) {
     if (!carreraId) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR.code, 400, 'Se requiere X-Carrera-Id header');
     }

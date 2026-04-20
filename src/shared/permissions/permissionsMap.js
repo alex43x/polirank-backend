@@ -16,5 +16,11 @@ export const permissionsMap = Object.freeze({
     'try:access', 'try:write', 'try:update', 'try:delete',
     'profile:read',
   ],
+  GUEST: [
+    'subject:read',
+    'section:read',
+    'review:access',
+    'try:access',
+  ],
   INACTIVE: [],
 });

@@ -71,7 +71,7 @@ router.get('/:id', triesController.getTryById);
  *       404:
  *         description: Asignatura no encontrada
  */
-router.post('/', createTryRules, validate, triesController.createTry);
+router.post('/', requirePermission('try:write'), createTryRules, validate, triesController.createTry);
 
 /**
  * @openapi
