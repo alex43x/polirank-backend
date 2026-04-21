@@ -4,17 +4,14 @@ import Alumno from '../../models/studentModel.js';
 import Rol from '../../models/roleModel.js';
 import Carrera from '../../models/careerModel.js';
 import Matriculacion from '../../models/enrollmentModel.js';
-import Aspecto from '../../models/aspectModel.js';
-import ReviewCont from '../../models/reviewCont.js';
 import ReviewCab from '../../models/reviewCab.js';
 import Intento from '../../models/triesModel.js';
-import Curso from '../../models/courseModel.js';
-import Seccion from '../../models/sectionModel.js';
-import Docente from '../../models/teacherModel.js';
-import Materia from '../../models/subjectModel.js';
 import { env } from '../../config/env.js';
 import { UnauthorizedError, NotFoundError, ConflictError } from '../../shared/errors/httpErrors.js';
+import AppError from '../../shared/errors/AppError.js';
 import { ErrorCodes } from '../../shared/errors/errorCodes.js';
+import { sendMail } from '../../shared/email/mailer.js';
+import { authLinkTemplate } from '../../shared/email/templates.js';
 
 function withStudentAssociations() {
   return [
@@ -27,6 +24,30 @@ function withStudentAssociations() {
   ];
 }
 
+function signAuthToken(student) {
+  return jwt.sign(
+    { id: student.id, correo: student.correo, rol: student.Rol, matriculaciones: student.matriculaciones },
+    env.jwt.secret,
+    { expiresIn: env.jwt.expiresIn },
+  );
+}
+
+function verifyFlowToken(token) {
+  try {
+    const payload = jwt.verify(token, env.jwt.secret);
+    if (payload.purpose !== 'auth-flow') {
+      throw new AppError(ErrorCodes.TOKEN_INVALID.code, 400, 'Token inválido');
+    }
+    return payload;
+  } catch (err) {
+    if (err instanceof AppError) throw err;
+    if (err.name === 'TokenExpiredError') {
+      throw new AppError(ErrorCodes.TOKEN_EXPIRED.code, 400, 'El enlace ha expirado. Solicitá uno nuevo.');
+    }
+    throw new AppError(ErrorCodes.TOKEN_INVALID.code, 400, 'Token inválido');
+  }
+}
+
 export async function login(correo, password) {
   const loginUser = await Alumno.scope('withPassword').findOne({ where: { correo } });
 
@@ -36,14 +57,7 @@ export async function login(correo, password) {
 
   const student = await Alumno.findByPk(loginUser.id, { include: withStudentAssociations() });
 
-  console.log('Usuario autenticado:', student.toJSON());
-
-  const token = jwt.sign(
-    { id: student.id, correo: student.correo, rol: student.Rol, matriculaciones: student.matriculaciones },
-    env.jwt.secret,
-    { expiresIn: env.jwt.expiresIn },
-  );
-
+  const token = signAuthToken(student);
   return { token, student };
 }
 
@@ -69,6 +83,86 @@ export async function getProfile(userId) {
   ]);
 
   return { student, reviews, tries };
+}
+
+export async function forgotPassword(correo) {
+  const exists = !!(await Alumno.findOne({ where: { correo } }));
+
+  const flowToken = jwt.sign({ correo, purpose: 'auth-flow' }, env.jwt.secret, { expiresIn: '1h' });
+  const link = `${env.frontendUrl}/auth/verify?token=${flowToken}`;
+
+  await sendMail({
+    to: correo,
+    subject: exists ? 'Restablecé tu contraseña — PoliRank' : 'Completá tu registro — PoliRank',
+    html: authLinkTemplate({ link, isNew: !exists }),
+  });
+
+  return { sent: true };
+}
+
+export async function verifyToken(token) {
+  const payload = verifyFlowToken(token);
+  const exists = !!(await Alumno.findOne({ where: { correo: payload.correo } }));
+  return { correo: payload.correo, accountExists: exists };
+}
+
+export async function resetPassword(token, newPassword) {
+  const payload = verifyFlowToken(token);
+
+  const student = await Alumno.scope('withPassword').findOne({
+    where: { correo: payload.correo },
+    include: [{ association: 'Rol' }],
+  });
+
+  if (!student) {
+    throw new NotFoundError(ErrorCodes.STUDENT_NOT_FOUND.code, 'Alumno no encontrado');
+  }
+
+  student.password = newPassword;
+
+  if (student.Rol?.nombre === 'INACTIVE') {
+    const studentRole = await Rol.findOne({ where: { nombre: 'STUDENT' } });
+    student.rol = studentRole.id;
+  }
+
+  await student.save();
+
+  const updated = await Alumno.findByPk(student.id, { include: withStudentAssociations() });
+  const authToken = signAuthToken(updated);
+  return { token: authToken, student: updated };
+}
+
+export async function register(token, { nombre, password, carreras }) {
+  const payload = verifyFlowToken(token);
+
+  const existing = await Alumno.findOne({ where: { correo: payload.correo } });
+  if (existing) {
+    throw new ConflictError(ErrorCodes.STUDENT_ALREADY_EXISTS.code, 'Ya existe una cuenta con este correo');
+  }
+
+  const [studentRole, carreraInstances] = await Promise.all([
+    Rol.findOne({ where: { nombre: 'STUDENT' } }),
+    Promise.all(carreras.map((id) => Carrera.findByPk(id))),
+  ]);
+
+  for (const c of carreraInstances) {
+    if (!c) throw new NotFoundError(ErrorCodes.CAREER_NOT_FOUND.code, 'Una de las carreras no existe');
+  }
+
+  const newStudent = await Alumno.create({
+    correo: payload.correo,
+    nombre,
+    password,
+    rol: studentRole.id,
+  });
+
+  await Promise.all(
+    carreras.map((carreraId) => Matriculacion.create({ alumno: newStudent.id, carrera: carreraId })),
+  );
+
+  const student = await Alumno.findByPk(newStudent.id, { include: withStudentAssociations() });
+  const authToken = signAuthToken(student);
+  return { token: authToken, student };
 }
 
 export async function createPassword(correo, newPassword) {

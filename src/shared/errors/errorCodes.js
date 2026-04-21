@@ -17,4 +17,11 @@ export const ErrorCodes = Object.freeze({
   VALIDATION_ERROR:            { code: 'validation_error',            status: 400 },
   INTERNAL_ERROR:              { code: 'internal_error',              status: 500 },
   INSUFFICIENT_PERMISSIONS:    { code: 'insufficient_permissions',    status: 403 },
+  DUPLICATE_ENTRY:             { code: 'duplicate_entry',             status: 409 },
+  TOKEN_INVALID:               { code: 'token_invalid',               status: 400 },
+  TOKEN_EXPIRED:               { code: 'token_expired',               status: 400 },
+  INVALID_EMAIL_DOMAIN:        { code: 'invalid_email_domain',        status: 400 },
+  CAREER_NOT_FOUND:            { code: 'career_not_found',            status: 404 },
+  CAREER_LIMIT_EXCEEDED:       { code: 'career_limit_exceeded',       status: 400 },
+  STUDENT_ALREADY_EXISTS:      { code: 'student_already_exists',      status: 409 },
 });

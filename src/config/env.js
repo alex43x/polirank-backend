@@ -20,7 +20,12 @@ export const env = {
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN || '1d',
   },
-  email: {
-    apiKey: process.env.EMAIL_API_KEY,
+  smtp: {
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT) || 587,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.SMTP_FROM || 'noreply@fpuna.edu.py',
   },
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 };
