@@ -37,10 +37,3 @@ export const registerRules = [
     .isArray({ min: 1, max: 2 }).withMessage('Seleccioná entre 1 y 2 carreras')
     .custom((arr) => arr.every(Number.isInteger)).withMessage('Las carreras deben ser IDs enteros'),
 ];
-
-export const createPasswordRules = [
-  correoFpuna(),
-  body('newPassword')
-    .notEmpty().withMessage('La nueva contraseña es requerida')
-    .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-];

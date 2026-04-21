@@ -66,13 +66,3 @@ export const register = async (req, res, next) => {
     next(err);
   }
 };
-
-export const createPassword = async (req, res, next) => {
-  try {
-    const { correo, newPassword } = req.body;
-    const student = await authService.createPassword(correo, newPassword);
-    return ApiResponse.success(res, { student: toUserDto(student) });
-  } catch (err) {
-    next(err);
-  }
-};

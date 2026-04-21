@@ -164,26 +164,3 @@ export async function register(token, { nombre, password, carreras }) {
   const authToken = signAuthToken(student);
   return { token: authToken, student };
 }
-
-export async function createPassword(correo, newPassword) {
-  const [student, studentRole] = await Promise.all([
-    Alumno.findOne({
-      where: { correo },
-      include: [{ association: 'Rol' }, { association: 'matriculaciones', include: [{ association: 'Carrera' }] }],
-    }),
-    Rol.findOne({ where: { nombre: 'STUDENT' } }),
-  ]);
-
-  if (!student) {
-    throw new NotFoundError(ErrorCodes.STUDENT_NOT_FOUND.code, 'Alumno no existe');
-  }
-  if (student.Rol.nombre !== 'INACTIVE') {
-    throw new ConflictError(ErrorCodes.USER_ALREADY_ACTIVE.code, 'Usuario ya activo');
-  }
-
-  student.password = newPassword;
-  student.rol = studentRole.id;
-  await student.save();
-
-  return Alumno.findByPk(student.id, { include: withStudentAssociations() });
-}

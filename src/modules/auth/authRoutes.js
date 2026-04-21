@@ -7,7 +7,6 @@ import {
   verifyTokenRules,
   resetPasswordRules,
   registerRules,
-  createPasswordRules,
 } from './authValidators.js';
 import { validate } from '../../shared/middlewares/validate.js';
 
@@ -143,7 +142,58 @@ router.get('/verify-token', verifyTokenRules, validate, authController.verifyTok
  *                 example: nueva123
  *     responses:
  *       200:
- *         description: Contraseña actualizada — retorna JWT + datos del estudiante
+ *         description: Contraseña actualizada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                       example: eyJhbGci...
+ *                     student:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         nombre:
+ *                           type: string
+ *                           example: Jane Doe
+ *                         correo:
+ *                           type: string
+ *                           example: estudiante@fpuna.edu.py
+ *                         rol:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 2
+ *                             nombre:
+ *                               type: string
+ *                               example: STUDENT
+ *                         matriculaciones:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               carrera:
+ *                                 type: object
+ *                                 nullable: true
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                     example: 1
+ *                                   nombre:
+ *                                     type: string
+ *                                     example: Ingeniería en Sistemas
  *       400:
  *         description: Token inválido/expirado o campos incorrectos
  *       404:
@@ -185,7 +235,55 @@ router.post('/reset-password', resetPasswordRules, validate, authController.rese
  *                 example: [1, 2]
  *     responses:
  *       201:
- *         description: Cuenta creada — retorna JWT + datos del estudiante
+ *         description: Cuenta creada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGci...
+ *                 student:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     nombre:
+ *                       type: string
+ *                       example: María González
+ *                     correo:
+ *                       type: string
+ *                       example: estudiante@fpuna.edu.py
+ *                     rol:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 2
+ *                         nombre:
+ *                           type: string
+ *                           example: STUDENT
+ *                     matriculaciones:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           carrera:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Ingeniería en Sistemas
  *       400:
  *         description: Token inválido/expirado, campos incorrectos o más de 2 carreras
  *       404:
@@ -212,38 +310,5 @@ router.post('/register', registerRules, validate, authController.register);
  *         description: Usuario no encontrado
  */
 router.get('/profile', authMiddleware, authController.getUserProfile);
-
-/**
- * @openapi
- * /auth/create-password:
- *   post:
- *     tags: [Auth]
- *     summary: Crear contraseña para usuario inactivo (legado)
- *     security: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [correo, newPassword]
- *             properties:
- *               correo:
- *                 type: string
- *                 format: email
- *                 example: estudiante@fpuna.edu.py
- *               newPassword:
- *                 type: string
- *                 minLength: 6
- *                 example: nueva123
- *     responses:
- *       200:
- *         description: Contraseña establecida
- *       400:
- *         description: Campos inválidos o usuario ya activo
- *       404:
- *         description: Alumno no existe
- */
-router.post('/create-password', createPasswordRules, validate, authController.createPassword);
 
 export default router;
