@@ -8,7 +8,7 @@ import { ErrorCodes } from '../../shared/errors/errorCodes.js';
 export async function getAllTries() {
   return Intento.findAndCountAll({
     order: [['id', 'ASC']],
-    include: [{ model: Materia }, { model: Alumno }],
+    include: [{ association: 'Materia' }, { association: 'Alumno' }],
   });
 }
 

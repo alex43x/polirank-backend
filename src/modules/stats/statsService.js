@@ -20,7 +20,7 @@ export const recalculateCourseStats = async (reviewCab) => {
       ],
       include: [
         {
-          model: ReviewCab,
+          association: 'ReviewCab',
           attributes: [],
           where: { curso: reviewExists.curso },
           required: true,

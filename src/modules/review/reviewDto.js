@@ -28,7 +28,7 @@ export const toStudentReviewDto = (r) => ({
   id: r.id,
   fecha: r.fecha,
   curso: toCourseDto(r.Curso),
-  detalles: toDetailsDto(r.ReviewConts),
+  detalles: toDetailsDto(r.contenidos),
 });
 
 export const toAdminReviewDto = (r) => ({

@@ -21,7 +21,7 @@ export const getLastCoursesBySection = async (seccionId) => {
 export const getStatsByCourse = async (courseId) => {
   return Stats.findAndCountAll({
     where: { curso: courseId },
-    include: [{ model: Aspecto }],
+    include: [{ association: 'Aspecto' }],
     order: [['aspecto', 'ASC']],
   });
 };

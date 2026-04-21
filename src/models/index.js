@@ -15,74 +15,72 @@ import Departamento from "./departmentModel.js";
 import Estadistica from "./statsModel.js";
 import Matriculacion from "./enrollmentModel.js";
 
-// Definir relaciones: Alumno - Rol
-Alumno.belongsTo(Rol, { foreignKey: 'rol' });
-Rol.hasMany(Alumno, { foreignKey: 'rol' });
+// Alumno - Rol
+Alumno.belongsTo(Rol, { foreignKey: 'rol', as: 'Rol' });
+Rol.hasMany(Alumno, { foreignKey: 'rol', as: 'alumnos' });
 
-// Definir relaciones: Matriculacion - Alumno y Carrera
-Matriculacion.belongsTo(Alumno, { foreignKey: 'alumno' });
-Alumno.hasMany(Matriculacion, { foreignKey: 'alumno' });
+// Matriculacion - Alumno
+Matriculacion.belongsTo(Alumno, { foreignKey: 'alumno', as: 'Alumno' });
+Alumno.hasMany(Matriculacion, { foreignKey: 'alumno', as: 'matriculaciones' });
 
-Matriculacion.belongsTo(Carrera, { foreignKey: 'carrera' });
-Carrera.hasMany(Matriculacion, { foreignKey: 'carrera' });
+// Matriculacion - Carrera
+Matriculacion.belongsTo(Carrera, { foreignKey: 'carrera', as: 'Carrera' });
+Carrera.hasMany(Matriculacion, { foreignKey: 'carrera', as: 'matriculaciones' });
 
-// Definir relaciones: Intento - Alumno
-Intento.belongsTo(Alumno, { foreignKey: 'alumno' });
-Alumno.hasMany(Intento, { foreignKey: 'alumno' });
+// Intento - Alumno
+Intento.belongsTo(Alumno, { foreignKey: 'alumno', as: 'Alumno' });
+Alumno.hasMany(Intento, { foreignKey: 'alumno', as: 'intentos' });
 
-// Definir relaciones: Intento - Materia
-Intento.belongsTo(Materia, { foreignKey: 'asignatura' });
-Materia.hasMany(Intento, { foreignKey: 'asignatura' });
+// Intento - Materia
+Intento.belongsTo(Materia, { foreignKey: 'asignatura', as: 'Materia' });
+Materia.hasMany(Intento, { foreignKey: 'asignatura', as: 'intentos' });
 
-// Definir relaciones: Docente - Seccion
-Docente.hasMany(Seccion, { foreignKey: 'docente' });
-Seccion.belongsTo(Docente, { foreignKey: 'docente' });
+// Seccion - Docente
+Seccion.belongsTo(Docente, { foreignKey: 'docente', as: 'Docente' });
+Docente.hasMany(Seccion, { foreignKey: 'docente', as: 'secciones' });
 
-// Definir relaciones: Materia - Seccion
-Materia.hasMany(Seccion, { foreignKey: 'asignatura' });
-Seccion.belongsTo(Materia, { foreignKey: 'asignatura' });
+// Seccion - Materia
+Seccion.belongsTo(Materia, { foreignKey: 'asignatura', as: 'Materia' });
+Materia.hasMany(Seccion, { foreignKey: 'asignatura', as: 'secciones' });
 
-// Definir relaciones: Seccion - Curso
-Seccion.hasMany(Curso, { foreignKey: 'seccion' });
-Curso.belongsTo(Seccion, { foreignKey: 'seccion' });
+// Curso - Seccion
+Curso.belongsTo(Seccion, { foreignKey: 'seccion', as: 'Seccion' });
+Seccion.hasMany(Curso, { foreignKey: 'seccion', as: 'cursos' });
 
-// Definir relaciones: Malla - Carrera
-Malla.belongsTo(Carrera, { foreignKey: 'carrera' });
-Carrera.hasMany(Malla, { foreignKey: 'carrera' });
+// Malla - Carrera
+Malla.belongsTo(Carrera, { foreignKey: 'carrera', as: 'Carrera' });
+Carrera.hasMany(Malla, { foreignKey: 'carrera', as: 'mallas' });
 
-// Definir relaciones: Malla - Materia
-Malla.belongsTo(Materia, { foreignKey: 'asignatura' });
-Materia.hasMany(Malla, { foreignKey: 'asignatura' });
+// Malla - Materia
+Malla.belongsTo(Materia, { foreignKey: 'asignatura', as: 'Materia' });
+Materia.hasMany(Malla, { foreignKey: 'asignatura', as: 'mallas' });
 
+// ReviewCab - Curso
+ReviewCab.belongsTo(Curso, { foreignKey: 'curso', as: 'Curso' });
+Curso.hasMany(ReviewCab, { foreignKey: 'curso', as: 'reviews' });
 
-// Definir relaciones: ReviewCab - Curso
-ReviewCab.belongsTo(Curso, { foreignKey: "curso"    });
-Curso.hasMany(ReviewCab, { foreignKey: "curso" });
+// ReviewCab - Alumno
+ReviewCab.belongsTo(Alumno, { foreignKey: 'alumno', as: 'Alumno' });
+Alumno.hasMany(ReviewCab, { foreignKey: 'alumno', as: 'reviews' });
 
-// Definir relaciones: ReviewCab - Alumno
-ReviewCab.belongsTo(Alumno, { foreignKey: "alumno" });
-Alumno.hasMany(ReviewCab, { foreignKey: "alumno" });
+// ReviewCont - ReviewCab
+ReviewCont.belongsTo(ReviewCab, { foreignKey: 'revcab', as: 'ReviewCab' });
+ReviewCab.hasMany(ReviewCont, { foreignKey: 'revcab', as: 'contenidos' });
 
-// Definir relaciones: ReviewCont - ReviewCab
-ReviewCont.belongsTo(ReviewCab, { foreignKey: "revcab" });
-ReviewCab.hasMany(ReviewCont, { foreignKey: "revcab" });
+// ReviewCont - Aspecto
+ReviewCont.belongsTo(Aspecto, { foreignKey: 'aspecto', as: 'Aspecto' });
+Aspecto.hasMany(ReviewCont, { foreignKey: 'aspecto', as: 'contenidos' });
 
-// Definir relaciones: ReviewCont - Aspecto
-ReviewCont.belongsTo(Aspecto, { foreignKey: "aspecto" });
-Aspecto.hasMany(ReviewCont, { foreignKey: "aspecto" });
+// Materia - Departamento
+Materia.belongsTo(Departamento, { foreignKey: 'depto', as: 'Departamento' });
+Departamento.hasMany(Materia, { foreignKey: 'depto', as: 'materias' });
 
-// Definir relaciones: Materia - Departamento
-Materia.belongsTo(Departamento, {foreignKey: 'depto'});
-Departamento.hasMany(Materia, {foreignKey: 'depto'});
+// Estadistica - Curso
+Estadistica.belongsTo(Curso, { foreignKey: 'curso', as: 'Curso' });
+Curso.hasMany(Estadistica, { foreignKey: 'curso', as: 'estadisticas' });
 
-// Definir relaciones: Estadistica - Curso
-Estadistica.belongsTo(Curso, { foreignKey: "curso" });
-Curso.hasMany(Estadistica, { foreignKey: "curso" });
-
-// Definir relaciones: Estadistica - Aspecto
-Estadistica.belongsTo(Aspecto, { foreignKey: "aspecto" });
-Aspecto.hasMany(Estadistica, { foreignKey: "aspecto" });
-
-
+// Estadistica - Aspecto
+Estadistica.belongsTo(Aspecto, { foreignKey: 'aspecto', as: 'Aspecto' });
+Aspecto.hasMany(Estadistica, { foreignKey: 'aspecto', as: 'estadisticas' });
 
 export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, Estadistica, Matriculacion, sequelize };

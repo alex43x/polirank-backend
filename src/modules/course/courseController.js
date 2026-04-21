@@ -1,5 +1,5 @@
 import Curso from '../../models/courseModel.js';
-import Section from '../../models/sectionModel.js';
+import Seccion from '../../models/sectionModel.js';
 import Materia from '../../models/subjectModel.js';
 import Docente from '../../models/teacherModel.js';
 import ReviewCab from '../../models/reviewCab.js';
@@ -14,9 +14,9 @@ import { toCourseDto } from './courseDto.js';
 function withCourseAssociations() {
   return [
     {
-      model: Section,
+      association: 'Seccion',
       attributes: ['id'],
-      include: [{ model: Docente }, { model: Materia }],
+      include: [{ association: 'Docente' }, { association: 'Materia' }],
     },
   ];
 }
@@ -49,6 +49,7 @@ export const getAllCourses = async (req, res, next) => {
 export const getCourseById = async (req, res, next) => {
   try {
     const course = await Curso.findByPk(req.params.id, { include: withCourseAssociations() });
+    console.log('Course found:', course ? course.toJSON() : 'No course found');
     if (!course) throw new NotFoundError(ErrorCodes.COURSE_NOT_FOUND.code, 'El curso no existe');
     return ApiResponse.success(res, toCourseDto(course));
   } catch (err) {
@@ -69,8 +70,8 @@ export const getReviewsByCourse = async (req, res, next) => {
     const reviews = await ReviewCab.findAndCountAll({
       where: { curso: id },
       include: [
-        { model: ReviewCont, include: [{ model: Aspecto }] },
-        { model: Alumno },
+        { association: 'contenidos', include: [{ model: Aspecto }] },
+        { association: 'Alumno' },
       ],
       limit,
       offset,

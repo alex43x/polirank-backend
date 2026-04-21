@@ -14,24 +14,24 @@ function withReviewAssociations(filters = {}) {
   const { docente, materia } = filters;
   return [
     {
-      model: ReviewCont,
-      include: [{ model: Aspecto }],
+      association: 'contenidos',
+      include: [{ association: 'Aspecto' }],
       order: [['id', 'ASC']],
     },
     {
-      model: Curso,
+      association: 'Curso',
       include: [
         {
-          model: Section,
+          association: 'Seccion',
           attributes: ['id'],
           include: [
-            { model: Teacher, ...(docente && { where: { id: docente } }) },
-            { model: Subject, ...(materia && { where: { id: materia } }) },
+            { association: 'Docente', ...(docente && { where: { id: docente } }) },
+            { association: 'Materia', ...(materia && { where: { id: materia } }) },
           ],
         },
       ],
     },
-    { model: Alumno, attributes: ['id', 'nombre', 'correo'] },
+    { association: 'Alumno', attributes: ['id', 'nombre', 'correo'] },
   ];
 }
 

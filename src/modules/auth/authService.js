@@ -18,11 +18,11 @@ import { ErrorCodes } from '../../shared/errors/errorCodes.js';
 
 function withStudentAssociations() {
   return [
-    { model: Rol },
+    { association: 'Rol' },
     {
-      model: Matriculacion,
+      association: 'matriculaciones',
       attributes: ['id', 'carrera'],
-      include: [{ model: Carrera, attributes: ['id', 'nombre'] }],
+      include: [{ association: 'Carrera', attributes: ['id', 'nombre'] }],
     },
   ];
 }
@@ -36,8 +36,10 @@ export async function login(correo, password) {
 
   const student = await Alumno.findByPk(loginUser.id, { include: withStudentAssociations() });
 
+  console.log('Usuario autenticado:', student.toJSON());
+
   const token = jwt.sign(
-    { id: student.id, correo: student.correo, rol: student.Rol },
+    { id: student.id, correo: student.correo, rol: student.Rol, matriculaciones: student.matriculaciones },
     env.jwt.secret,
     { expiresIn: env.jwt.expiresIn },
   );
@@ -56,13 +58,13 @@ export async function getProfile(userId) {
     ReviewCab.findAndCountAll({
       where: { alumno: userId },
       include: [
-        { model: ReviewCont, include: [{ model: Aspecto }] },
-        { model: Curso, include: [{ model: Seccion, include: [{ model: Docente }, { model: Materia }] }] },
+        { association: 'contenidos', include: [{ association: 'Aspecto' }] },
+        { association: 'Curso', include: [{ association: 'Seccion', include: [{ association: 'Docente' }, { association: 'Materia' }] }] },
       ],
     }),
     Intento.findAndCountAll({
       where: { alumno: userId },
-      include: [{ model: Materia }],
+      include: [{ association: 'Materia' }],
     }),
   ]);
 
@@ -73,7 +75,7 @@ export async function createPassword(correo, newPassword) {
   const [student, studentRole] = await Promise.all([
     Alumno.findOne({
       where: { correo },
-      include: [{ model: Rol }, { model: Matriculacion, include: [{ model: Carrera }] }],
+      include: [{ association: 'Rol' }, { association: 'matriculaciones', include: [{ association: 'Carrera' }] }],
     }),
     Rol.findOne({ where: { nombre: 'STUDENT' } }),
   ]);

@@ -61,7 +61,7 @@ export async function getAllSubjects({ page = 1, limit = 10, search, dpto_id, ca
 
   return Subject.findAndCountAll({
     where,
-    include: [{ model: Departamento }],
+    include: [{ association: 'Departamento' }],
     order: [['id', 'ASC']],
     limit,
     offset,
@@ -81,7 +81,7 @@ export async function getSubjectById(id, currentUser, carreraId) {
     throw new AppError(ErrorCodes.INSUFFICIENT_PERMISSIONS.code, 403, 'No tienes permisos para ver materias');
   }
 
-  const subject = await Subject.findByPk(id, { include: [{ model: Departamento }] });
+  const subject = await Subject.findByPk(id, { include: [{ association: 'Departamento' }] });
   if (!subject) throw new NotFoundError(ErrorCodes.SUBJECT_NOT_FOUND.code, 'Materia no encontrada');
 
   return subject;
@@ -102,14 +102,14 @@ export async function getSectionsBySubjectId(id, currentUser, carreraId) {
 
   return Section.findAll({
     where: { asignatura: id },
-    include: [{ model: Docente }],
+    include: [{ association: 'Docente' }],
   });
 }
 
 export async function getSectionsStatsBySubjectId(id) {
   const sections = await Section.findAll({
     where: { asignatura: id },
-    include: [{ model: Docente }],
+    include: [{ association: 'Docente' }],
   });
 
   const sectionsWithAverage = [];

@@ -11,7 +11,7 @@ import { ErrorCodes } from '../../shared/errors/errorCodes.js';
 function withAssociations() {
   return [
     { association: 'Rol', attributes: ['id', 'nombre'] },
-    { model: Matriculacion, attributes: ['id', 'carrera'], include: [{ model: Carrera }] },
+    { association: 'matriculaciones', attributes: ['id', 'carrera'], include: [{ association: 'Carrera' }] },
   ];
 }
 
@@ -47,7 +47,7 @@ export async function getStudentReviews(id) {
   await getStudentById(id);
   return ReviewCab.findAndCountAll({
     where: { alumno: id },
-    include: [{ model: ReviewCont, include: [{ model: Aspecto }] }],
+    include: [{ association: 'contenidos', include: [{ association: 'Aspecto' }] }],
   });
 }
 
