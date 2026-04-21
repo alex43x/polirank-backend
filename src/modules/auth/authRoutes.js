@@ -30,7 +30,58 @@ const router = Router();
  *                 example: password123
  *     responses:
  *       200:
- *         description: Login exitoso — retorna token y datos del usuario
+ *         description: Login exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                       example: eyJhbGci...
+ *                     student:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         nombre:
+ *                           type: string
+ *                           example: Jane Doe
+ *                         correo:
+ *                           type: string
+ *                           example: estudiante@example.com
+ *                         rol:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 2
+ *                             nombre:
+ *                               type: string
+ *                               example: STUDENT
+ *                         matriculaciones:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               carrera:
+ *                                 type: object
+ *                                 nullable: true
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                     example: 1
+ *                                   nombre:
+ *                                     type: string
+ *                                     example: Ingeniería en Sistemas
  *       400:
  *         description: Campos inválidos
  *         content:
@@ -56,7 +107,157 @@ router.post('/login', loginRules, validate, authController.login);
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Perfil del usuario con reviews e intentos
+ *         description: Perfil del usuario autenticado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     student:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         nombre:
+ *                           type: string
+ *                           example: Jane Doe
+ *                         correo:
+ *                           type: string
+ *                           example: estudiante@example.com
+ *                         rol:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 2
+ *                             nombre:
+ *                               type: string
+ *                               example: STUDENT
+ *                         matriculaciones:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               carrera:
+ *                                 type: object
+ *                                 nullable: true
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                     example: 1
+ *                                   nombre:
+ *                                     type: string
+ *                                     example: Ingeniería en Sistemas
+ *                     reviews:
+ *                       type: object
+ *                       properties:
+ *                         count:
+ *                           type: integer
+ *                           example: 3
+ *                         rows:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               fecha:
+ *                                 type: string
+ *                                 format: date-time
+ *                                 example: '2024-01-15T10:00:00Z'
+ *                               curso:
+ *                                 type: object
+ *                                 nullable: true
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                     example: 1
+ *                                   year:
+ *                                     type: integer
+ *                                     example: 2024
+ *                                   periodo:
+ *                                     type: integer
+ *                                     example: 1
+ *                                   seccion:
+ *                                     type: object
+ *                                     nullable: true
+ *                                     properties:
+ *                                       id:
+ *                                         type: integer
+ *                                         example: 5
+ *                                       docente:
+ *                                         type: object
+ *                                         nullable: true
+ *                                         properties:
+ *                                           id:
+ *                                             type: integer
+ *                                             example: 3
+ *                                           nombre:
+ *                                             type: string
+ *                                             example: Juan Pérez
+ *                                       materia:
+ *                                         type: object
+ *                                         nullable: true
+ *                                         properties:
+ *                                           id:
+ *                                             type: integer
+ *                                             example: 2
+ *                                           nombre:
+ *                                             type: string
+ *                                             example: Cálculo I
+ *                               detalles:
+ *                                 type: array
+ *                                 items:
+ *                                   type: object
+ *                                   properties:
+ *                                     aspecto:
+ *                                       type: object
+ *                                       nullable: true
+ *                                       properties:
+ *                                         id:
+ *                                           type: integer
+ *                                           example: 1
+ *                                         nombre:
+ *                                           type: string
+ *                                           example: Puntualidad
+ *                                     valor:
+ *                                       type: integer
+ *                                       example: 4
+ *                     tries:
+ *                       type: object
+ *                       properties:
+ *                         count:
+ *                           type: integer
+ *                           example: 2
+ *                         rows:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               asignatura:
+ *                                 type: object
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                     example: 2
+ *                                   nombre:
+ *                                     type: string
+ *                                     example: Cálculo I
+ *                               valor:
+ *                                 type: integer
+ *                                 example: 2
  *       401:
  *         description: Token inválido o no proporcionado
  *         content:
@@ -97,7 +298,55 @@ router.get('/profile', authMiddleware, authController.getUserProfile);
  *                 example: nueva123
  *     responses:
  *       200:
- *         description: Contraseña creada y usuario activado
+ *         description: Contraseña establecida correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     student:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         nombre:
+ *                           type: string
+ *                           example: Jane Doe
+ *                         correo:
+ *                           type: string
+ *                           example: estudiante@example.com
+ *                         rol:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 2
+ *                             nombre:
+ *                               type: string
+ *                               example: STUDENT
+ *                         matriculaciones:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               carrera:
+ *                                 type: object
+ *                                 nullable: true
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                     example: 1
+ *                                   nombre:
+ *                                     type: string
+ *                                     example: Ingeniería en Sistemas
  *       400:
  *         description: Campos inválidos o usuario ya activo
  *         content:

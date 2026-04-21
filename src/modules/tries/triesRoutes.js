@@ -15,7 +15,38 @@ const router = Router();
  *     description: Solo ADMIN puede ver todos los intentos.
  *     responses:
  *       200:
- *         description: Lista de intentos obtenida exitosamente
+ *         description: Lista de intentos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       asignatura:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 2
+ *                           nombre:
+ *                             type: string
+ *                             example: Cálculo I
+ *                       valor:
+ *                         type: integer
+ *                         example: 2
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 15
  *       403:
  *         description: Sin permisos (requiere try:read:all)
  */
@@ -35,7 +66,30 @@ router.get('/', requirePermission('try:read:all'), triesController.getAllTries);
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Intento obtenido exitosamente
+ *         description: Intento encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     asignatura:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 2
+ *                         nombre:
+ *                           type: string
+ *                           example: Cálculo I
+ *                     valor:
+ *                       type: integer
+ *                       example: 2
  *       403:
  *         description: Sin permisos para ver este intento
  *       404:
@@ -65,7 +119,30 @@ router.get('/:id', triesController.getTryById);
  *                 example: 3
  *     responses:
  *       201:
- *         description: Intento creado exitosamente
+ *         description: Intento creado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     asignatura:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 2
+ *                         nombre:
+ *                           type: string
+ *                           example: Cálculo I
+ *                     valor:
+ *                       type: integer
+ *                       example: 3
  *       400:
  *         description: Campos inválidos o intento duplicado
  *       404:
@@ -96,7 +173,30 @@ router.post('/', requirePermission('try:write'), createTryRules, validate, tries
  *                 type: integer
  *     responses:
  *       200:
- *         description: Intento actualizado exitosamente
+ *         description: Intento actualizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     asignatura:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 2
+ *                         nombre:
+ *                           type: string
+ *                           example: Cálculo I
+ *                     valor:
+ *                       type: integer
+ *                       example: 2
  *       403:
  *         description: Sin permisos para actualizar este intento
  *       404:
@@ -117,7 +217,18 @@ router.put('/:id', updateTryRules, validate, triesController.updateTry);
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Intento eliminado exitosamente
+ *         description: Intento eliminado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: Intento eliminado exitosamente
  *       403:
  *         description: Sin permisos para eliminar este intento
  *       404:

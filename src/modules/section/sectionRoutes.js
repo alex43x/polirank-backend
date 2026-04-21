@@ -20,7 +20,63 @@ const router = Router();
  *         description: ID de la sección
  *     responses:
  *       200:
- *         description: Estadísticas obtenidas exitosamente
+ *         description: Últimas estadísticas de la sección
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     courses:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           seccion:
+ *                             type: integer
+ *                             example: 3
+ *                           year:
+ *                             type: integer
+ *                             example: 2024
+ *                           periodo:
+ *                             type: integer
+ *                             example: 1
+ *                     stats:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           aspecto:
+ *                             type: integer
+ *                             example: 1
+ *                           promedio:
+ *                             type: string
+ *                             example: '4.20'
+ *                           count:
+ *                             type: integer
+ *                             example: 2
+ *                           aspect:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Puntualidad
+ *                     promedioGeneral:
+ *                       type: number
+ *                       format: float
+ *                       example: 4.15
+ *                     totalReviews:
+ *                       type: integer
+ *                       example: 20
  *       404:
  *         description: Sección no encontrada
  */
@@ -42,7 +98,69 @@ router.get('/:id/last', requirePermission('section:read'), sectionController.get
  *         description: ID de la sección
  *     responses:
  *       200:
- *         description: Historial obtenido exitosamente
+ *         description: Historial de estadísticas de la sección
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       example: 5
+ *                     courseStats:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           curso:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               seccion:
+ *                                 type: integer
+ *                                 example: 3
+ *                               year:
+ *                                 type: integer
+ *                                 example: 2024
+ *                               periodo:
+ *                                 type: integer
+ *                                 example: 1
+ *                           stats:
+ *                             type: object
+ *                             properties:
+ *                               count:
+ *                                 type: integer
+ *                                 example: 6
+ *                               rows:
+ *                                 type: array
+ *                                 items:
+ *                                   type: object
+ *                                   properties:
+ *                                     aspecto:
+ *                                       type: integer
+ *                                       example: 1
+ *                                     promedio:
+ *                                       type: string
+ *                                       example: '4.50'
+ *                                     cantidad:
+ *                                       type: integer
+ *                                       example: 15
+ *                           promedioGeneral:
+ *                             type: number
+ *                             format: float
+ *                             example: 4.5
+ *                           totalReviews:
+ *                             type: integer
+ *                             example: 15
+ *                     totalPromedio:
+ *                       type: number
+ *                       format: float
+ *                       example: 4.2
  */
 router.get('/:id/history', requirePermission('section:read'), sectionController.getSectionHistoryStats);
 
@@ -62,7 +180,35 @@ router.get('/:id/history', requirePermission('section:read'), sectionController.
  *         description: ID de la sección
  *     responses:
  *       200:
- *         description: Cursos obtenidos exitosamente
+ *         description: Cursos de la sección
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     cursos:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           seccion:
+ *                             type: integer
+ *                             example: 3
+ *                           year:
+ *                             type: integer
+ *                             example: 2024
+ *                           periodo:
+ *                             type: integer
+ *                             example: 1
+ *                     count:
+ *                       type: integer
+ *                       example: 4
  */
 router.get('/:id/cursos', requirePermission('section:read'), sectionController.getCoursesBySection);
 

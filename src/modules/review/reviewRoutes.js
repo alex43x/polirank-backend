@@ -30,7 +30,110 @@ const router = Router();
  *         description: Filtrar por ID de alumno
  *     responses:
  *       200:
- *         description: Lista paginada de reviews
+ *         description: Lista de reviews paginada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       fecha:
+ *                         type: string
+ *                         format: date-time
+ *                         example: '2024-01-15T10:00:00Z'
+ *                       curso:
+ *                         type: object
+ *                         nullable: true
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           year:
+ *                             type: integer
+ *                             example: 2024
+ *                           periodo:
+ *                             type: integer
+ *                             example: 1
+ *                           seccion:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 5
+ *                               docente:
+ *                                 type: object
+ *                                 nullable: true
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                     example: 3
+ *                                   nombre:
+ *                                     type: string
+ *                                     example: Juan Pérez
+ *                               materia:
+ *                                 type: object
+ *                                 nullable: true
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                     example: 2
+ *                                   nombre:
+ *                                     type: string
+ *                                     example: Cálculo I
+ *                       detalles:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             aspecto:
+ *                               type: object
+ *                               nullable: true
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 1
+ *                                 nombre:
+ *                                   type: string
+ *                                   example: Puntualidad
+ *                             valor:
+ *                               type: integer
+ *                               example: 4
+ *                       alumno:
+ *                         type: object
+ *                         nullable: true
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 5
+ *                           nombre:
+ *                             type: string
+ *                             example: Jane Doe
+ *                           correo:
+ *                             type: string
+ *                             example: jane@example.com
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 30
+ *                     totalPages:
+ *                       type: integer
+ *                       example: 3
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
  *       403:
  *         description: Sin permisos
  *         content:
@@ -54,7 +157,94 @@ router.get('/', requirePermission('review:read:all'), reviewController.getAllRev
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Datos de la review
+ *         description: Review encontrada. ADMIN incluye campo alumno.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     fecha:
+ *                       type: string
+ *                       format: date-time
+ *                       example: '2024-01-15T10:00:00Z'
+ *                     curso:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         year:
+ *                           type: integer
+ *                           example: 2024
+ *                         periodo:
+ *                           type: integer
+ *                           example: 1
+ *                         seccion:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 5
+ *                             docente:
+ *                               type: object
+ *                               nullable: true
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 3
+ *                                 nombre:
+ *                                   type: string
+ *                                   example: Juan Pérez
+ *                             materia:
+ *                               type: object
+ *                               nullable: true
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 2
+ *                                 nombre:
+ *                                   type: string
+ *                                   example: Cálculo I
+ *                     detalles:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           aspecto:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Puntualidad
+ *                           valor:
+ *                             type: integer
+ *                             example: 4
+ *                     alumno:
+ *                       description: Solo presente si el solicitante es ADMIN
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 5
+ *                         nombre:
+ *                           type: string
+ *                           example: Jane Doe
+ *                         correo:
+ *                           type: string
+ *                           example: jane@example.com
  *       403:
  *         description: Sin permiso para ver esta review
  *         content:
@@ -106,6 +296,79 @@ router.get('/:id', reviewController.getReviewById);
  *     responses:
  *       201:
  *         description: Review creada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     fecha:
+ *                       type: string
+ *                       format: date-time
+ *                       example: '2024-01-15T10:00:00Z'
+ *                     curso:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         year:
+ *                           type: integer
+ *                           example: 2024
+ *                         periodo:
+ *                           type: integer
+ *                           example: 1
+ *                         seccion:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 5
+ *                             docente:
+ *                               type: object
+ *                               nullable: true
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 3
+ *                                 nombre:
+ *                                   type: string
+ *                                   example: Juan Pérez
+ *                             materia:
+ *                               type: object
+ *                               nullable: true
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 2
+ *                                 nombre:
+ *                                   type: string
+ *                                   example: Cálculo I
+ *                     detalles:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           aspecto:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Puntualidad
+ *                           valor:
+ *                             type: integer
+ *                             example: 4
  *       400:
  *         description: Datos inválidos
  *         content:
@@ -154,6 +417,79 @@ router.post('/', requirePermission('review:write'), createReviewRules, validate,
  *     responses:
  *       200:
  *         description: Review actualizada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     fecha:
+ *                       type: string
+ *                       format: date-time
+ *                       example: '2024-01-15T10:00:00Z'
+ *                     curso:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         year:
+ *                           type: integer
+ *                           example: 2024
+ *                         periodo:
+ *                           type: integer
+ *                           example: 1
+ *                         seccion:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 5
+ *                             docente:
+ *                               type: object
+ *                               nullable: true
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 3
+ *                                 nombre:
+ *                                   type: string
+ *                                   example: Juan Pérez
+ *                             materia:
+ *                               type: object
+ *                               nullable: true
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 2
+ *                                 nombre:
+ *                                   type: string
+ *                                   example: Cálculo I
+ *                     detalles:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           aspecto:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Puntualidad
+ *                           valor:
+ *                             type: integer
+ *                             example: 4
  *       403:
  *         description: Sin permiso para actualizar esta review
  *         content:
@@ -184,6 +520,17 @@ router.put('/:id', requirePermission('review:update'), reviewController.updateRe
  *     responses:
  *       200:
  *         description: Review eliminada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: Review eliminado exitosamente
  *       403:
  *         description: Sin permiso para eliminar esta review
  *         content:

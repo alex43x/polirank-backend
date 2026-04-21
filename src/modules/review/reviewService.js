@@ -44,7 +44,7 @@ export async function getAllReviews({ page = 1, limit = 10, curso, alumno } = {}
   return ReviewCab.findAndCountAll({
     where,
     include: withReviewAssociations(),
-    order: [['fecha', 'DESC'], [ReviewCont, Aspecto, 'id', 'ASC']],
+    order: [['fecha', 'DESC'], [{ model: ReviewCont, as: 'contenidos' }, { model: Aspecto, as: 'Aspecto' }, 'id', 'ASC']],
     limit,
     offset,
     distinct: true,

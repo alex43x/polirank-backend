@@ -32,7 +32,69 @@ const router = Router();
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Lista paginada de estudiantes
+ *         description: Lista de estudiantes paginada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       nombre:
+ *                         type: string
+ *                         example: Jane Doe
+ *                       correo:
+ *                         type: string
+ *                         example: jane@example.com
+ *                       rol:
+ *                         type: object
+ *                         nullable: true
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 2
+ *                           nombre:
+ *                             type: string
+ *                             example: STUDENT
+ *                       matriculaciones:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 1
+ *                             carrera:
+ *                               type: object
+ *                               nullable: true
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 1
+ *                                 nombre:
+ *                                   type: string
+ *                                   example: Ingeniería en Sistemas
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 80
+ *                     totalPages:
+ *                       type: integer
+ *                       example: 8
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
  *       403:
  *         description: Sin permisos
  *         content:
@@ -55,13 +117,54 @@ router.get('/', studentController.getAllStudents);
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Datos del estudiante
- *       404:
- *         description: Alumno no encontrado
+ *         description: Estudiante encontrado
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     nombre:
+ *                       type: string
+ *                       example: Jane Doe
+ *                     correo:
+ *                       type: string
+ *                       example: jane@example.com
+ *                     rol:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 2
+ *                         nombre:
+ *                           type: string
+ *                           example: STUDENT
+ *                     matriculaciones:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           carrera:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Ingeniería en Sistemas
+ *       404:
+ *         description: Alumno no encontrado
  */
 router.get('/:id', studentController.getStudentById);
 
@@ -79,6 +182,56 @@ router.get('/:id', studentController.getStudentById);
  *     responses:
  *       200:
  *         description: Reviews del estudiante
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       curso:
+ *                         type: integer
+ *                         example: 1
+ *                       alumno:
+ *                         type: integer
+ *                         example: 5
+ *                       fecha:
+ *                         type: string
+ *                         format: date-time
+ *                         example: '2024-01-15T10:00:00Z'
+ *                       contenidos:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             aspecto:
+ *                               type: integer
+ *                               example: 1
+ *                             valor:
+ *                               type: integer
+ *                               example: 4
+ *                             Aspecto:
+ *                               type: object
+ *                               nullable: true
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 1
+ *                                 nombre:
+ *                                   type: string
+ *                                   example: Puntualidad
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 5
  *       404:
  *         description: Alumno no encontrado
  *         content:
@@ -124,6 +277,51 @@ router.get('/:id/reviews', studentController.getStudentReviews);
  *     responses:
  *       201:
  *         description: Estudiante creado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     nombre:
+ *                       type: string
+ *                       example: Juan Pérez
+ *                     correo:
+ *                       type: string
+ *                       example: juan@example.com
+ *                     rol:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 2
+ *                         nombre:
+ *                           type: string
+ *                           example: STUDENT
+ *                     matriculaciones:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           carrera:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Ingeniería en Sistemas
  *       400:
  *         description: Datos inválidos
  *         content:
@@ -162,12 +360,53 @@ router.post('/', requirePermission('student:write'), createStudentRules, validat
  *     responses:
  *       200:
  *         description: Estudiante actualizado
- *       404:
- *         description: Alumno no encontrado
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     nombre:
+ *                       type: string
+ *                       example: Juan Carlos Pérez
+ *                     correo:
+ *                       type: string
+ *                       example: juan@example.com
+ *                     rol:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 2
+ *                         nombre:
+ *                           type: string
+ *                           example: STUDENT
+ *                     matriculaciones:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           carrera:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 1
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Ingeniería en Sistemas
+ *       404:
+ *         description: Alumno no encontrado
  */
 router.put('/:id', requirePermission('student:write'), updateStudentRules, validate, studentController.updateStudent);
 
@@ -185,7 +424,18 @@ router.put('/:id', requirePermission('student:write'), updateStudentRules, valid
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Alumno eliminado
+ *         description: Estudiante eliminado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: Alumno eliminado
  *       404:
  *         description: Alumno no encontrado
  *         content:

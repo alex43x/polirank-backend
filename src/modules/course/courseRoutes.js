@@ -21,7 +21,68 @@ const router = Router();
  *         schema: { type: integer, default: 10 }
  *     responses:
  *       200:
- *         description: Lista paginada de cursos
+ *         description: Lista de cursos paginada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       year:
+ *                         type: integer
+ *                         example: 2024
+ *                       periodo:
+ *                         type: integer
+ *                         example: 1
+ *                       seccion:
+ *                         type: object
+ *                         nullable: true
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 5
+ *                           docente:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 3
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Juan Pérez
+ *                           materia:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 2
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Cálculo I
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 50
+ *                     totalPages:
+ *                       type: integer
+ *                       example: 5
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
  *       403:
  *         description: Sin permisos
  *         content:
@@ -44,7 +105,51 @@ router.get('/', listCoursesRules, validate, getAllCourses);
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Datos del curso
+ *         description: Curso encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     year:
+ *                       type: integer
+ *                       example: 2024
+ *                     periodo:
+ *                       type: integer
+ *                       example: 1
+ *                     seccion:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 5
+ *                         docente:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 3
+ *                             nombre:
+ *                               type: string
+ *                               example: Juan Pérez
+ *                         materia:
+ *                           type: object
+ *                           nullable: true
+ *                           properties:
+ *                             id:
+ *                               type: integer
+ *                               example: 2
+ *                             nombre:
+ *                               type: string
+ *                               example: Cálculo I
  *       404:
  *         description: Curso no encontrado
  *         content:
@@ -73,7 +178,79 @@ router.get('/:id', getCourseById);
  *         schema: { type: integer, default: 10 }
  *     responses:
  *       200:
- *         description: Reviews del curso
+ *         description: Reviews del curso paginadas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       curso:
+ *                         type: integer
+ *                         example: 1
+ *                       alumno:
+ *                         type: integer
+ *                         example: 5
+ *                       fecha:
+ *                         type: string
+ *                         format: date-time
+ *                         example: '2024-01-15T10:00:00Z'
+ *                       contenidos:
+ *                         type: array
+ *                         items:
+ *                           type: object
+ *                           properties:
+ *                             aspecto:
+ *                               type: integer
+ *                               example: 1
+ *                             valor:
+ *                               type: integer
+ *                               example: 4
+ *                             Aspecto:
+ *                               type: object
+ *                               nullable: true
+ *                               properties:
+ *                                 id:
+ *                                   type: integer
+ *                                   example: 1
+ *                                 nombre:
+ *                                   type: string
+ *                                   example: Puntualidad
+ *                       Alumno:
+ *                         type: object
+ *                         nullable: true
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 5
+ *                           nombre:
+ *                             type: string
+ *                             example: Jane Doe
+ *                           correo:
+ *                             type: string
+ *                             example: jane@example.com
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 20
+ *                     totalPages:
+ *                       type: integer
+ *                       example: 2
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
  *       404:
  *         description: Curso no encontrado
  *         content:

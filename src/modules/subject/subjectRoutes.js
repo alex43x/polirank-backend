@@ -36,7 +36,54 @@ const router = Router();
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Lista obtenida exitosamente
+ *         description: Lista de materias paginada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       nombre:
+ *                         type: string
+ *                         example: Cálculo I
+ *                       departamentoId:
+ *                         type: integer
+ *                         example: 1
+ *                       departamento:
+ *                         type: object
+ *                         nullable: true
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 1
+ *                           nombre:
+ *                             type: string
+ *                             example: Matemática
+ *                           siglas:
+ *                             type: string
+ *                             example: MAT
+ *                 meta:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       example: 100
+ *                     totalPages:
+ *                       type: integer
+ *                       example: 10
+ *                     currentPage:
+ *                       type: integer
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       example: 10
  *       401:
  *         description: No autenticado
  */
@@ -55,7 +102,37 @@ router.get('/', getAllSubjectsRules, validate, subjectController.getAllSubjects)
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Materia obtenida exitosamente
+ *         description: Materia encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     nombre:
+ *                       type: string
+ *                       example: Cálculo I
+ *                     departamentoId:
+ *                       type: integer
+ *                       example: 1
+ *                     departamento:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         nombre:
+ *                           type: string
+ *                           example: Matemática
+ *                         siglas:
+ *                           type: string
+ *                           example: MAT
  *       403:
  *         description: Sin permisos
  *       404:
@@ -77,7 +154,49 @@ router.get('/:id', subjectController.getSubjectById);
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Estadísticas obtenidas exitosamente
+ *         description: Lista de secciones con estadísticas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       section:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                             example: 10
+ *                           docente:
+ *                             type: integer
+ *                             example: 3
+ *                           asignatura:
+ *                             type: integer
+ *                             example: 1
+ *                           Docente:
+ *                             type: object
+ *                             nullable: true
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                                 example: 3
+ *                               nombre:
+ *                                 type: string
+ *                                 example: Juan Pérez
+ *                               correo:
+ *                                 type: string
+ *                                 example: juan.perez@uni.edu
+ *                       promedioGeneral:
+ *                         type: number
+ *                         format: float
+ *                         example: 4.25
+ *                       totalReviews:
+ *                         type: integer
+ *                         example: 12
  *       403:
  *         description: Sin permisos
  */
@@ -97,7 +216,27 @@ router.get('/:id/secciones', subjectController.getSectionsStatsBySubjectId);
  *         schema: { type: integer }
  *     responses:
  *       200:
- *         description: Estadísticas obtenidas exitosamente
+ *         description: Distribución de intentos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     1_intento:
+ *                       type: integer
+ *                       example: 45
+ *                     2_intentos:
+ *                       type: integer
+ *                       example: 20
+ *                     3_intentos:
+ *                       type: integer
+ *                       example: 10
+ *                     mas_intentos:
+ *                       type: integer
+ *                       example: 5
  */
 router.get('/:id/intentos', subjectController.getSubjectTriesStats);
 
