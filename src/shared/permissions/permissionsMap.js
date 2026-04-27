@@ -2,6 +2,7 @@ export const permissionsMap = Object.freeze({
   ADMIN: [
     'student:read', 'student:write',
     'subject:read',
+    'teacher:read',
     'course:read',
     'section:read',
     'review:access', 'review:read:all', 'review:write', 'review:update', 'review:delete',
@@ -11,6 +12,7 @@ export const permissionsMap = Object.freeze({
   ],
   STUDENT: [
     'subject:read',
+    'teacher:read',
     'section:read',
     'review:access', 'review:write', 'review:update', 'review:delete',
     'try:access', 'try:write', 'try:update', 'try:delete',
@@ -18,6 +20,7 @@ export const permissionsMap = Object.freeze({
   ],
   GUEST: [
     'subject:read',
+    'teacher:read',
     'section:read',
     'review:access',
     'try:access',

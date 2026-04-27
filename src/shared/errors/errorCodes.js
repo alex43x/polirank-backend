@@ -5,6 +5,7 @@ export const ErrorCodes = Object.freeze({
   ASPECT_NOT_FOUND:            { code: 'aspect_not_found',            status: 404 },
   SECTION_NOT_FOUND:           { code: 'section_not_found',           status: 404 },
   SUBJECT_NOT_FOUND:           { code: 'subject_not_found',           status: 404 },
+  TEACHER_NOT_FOUND:           { code: 'teacher_not_found',           status: 404 },
   TRY_NOT_FOUND:               { code: 'try_not_found',               status: 404 },
   REVIEW_ALREADY_EXISTS:       { code: 'review_already_exists',       status: 409 },
   TRY_ALREADY_EXISTS:          { code: 'try_already_exists',          status: 409 },
