@@ -8,6 +8,14 @@ const transport = nodemailer.createTransport({
   auth: { user: env.smtp.user, pass: env.smtp.pass },
 });
 
+if (env.nodeEnv !== 'production') {
+  transport.verify()
+    .then(() => console.log('\u2705 SMTP Brevo conectado correctamente'))
+    .catch((err) => console.error('\u274c Error conectando a SMTP:', err));
+}
+
+const from = `${env.smtp.fromName} <${env.smtp.fromAddress}>`;
+
 export async function sendMail({ to, subject, html }) {
-  return transport.sendMail({ from: env.smtp.from, to, subject, html });
+  return transport.sendMail({ from, to, subject, html });
 }

@@ -21,11 +21,12 @@ export const env = {
     expiresIn: process.env.JWT_EXPIRES_IN || '1d',
   },
   smtp: {
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT) || 587,
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-    from: process.env.SMTP_FROM || 'noreply@fpuna.edu.py',
+    host: process.env.BREVO_SMTP_HOST || process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+    port: parseInt(process.env.BREVO_SMTP_PORT || process.env.SMTP_PORT) || 587,
+    user: process.env.BREVO_SMTP_USER || process.env.SMTP_USER,
+    pass: process.env.BREVO_SMTP_PASS || process.env.SMTP_PASS,
+    fromAddress: process.env.MAIL_FROM_ADDRESS || process.env.SMTP_FROM,
+    fromName: process.env.MAIL_FROM_NAME || 'PoliRank',
   },
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  appUrl: process.env.APP_URL || process.env.FRONTEND_URL,
 };

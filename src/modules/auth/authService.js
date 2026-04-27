@@ -11,7 +11,7 @@ import { UnauthorizedError, NotFoundError, ConflictError } from '../../shared/er
 import AppError from '../../shared/errors/AppError.js';
 import { ErrorCodes } from '../../shared/errors/errorCodes.js';
 import { sendMail } from '../../shared/email/mailer.js';
-import { authLinkTemplate } from '../../shared/email/templates.js';
+import { authTemplate } from '../../shared/email/templates.js';
 
 function withStudentAssociations() {
   return [
@@ -94,7 +94,7 @@ export async function forgotPassword(correo) {
   await sendMail({
     to: correo,
     subject: exists ? 'Restablecé tu contraseña — PoliRank' : 'Completá tu registro — PoliRank',
-    html: authLinkTemplate({ link, isNew: !exists }),
+    html: authTemplate({ link, isNew: !exists }),
   });
 
   return { sent: true };
