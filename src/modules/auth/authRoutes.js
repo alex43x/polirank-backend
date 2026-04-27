@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import * as authController from './authController.js';
 import authMiddleware from '../../shared/middlewares/auth.js';
+import { requestAccessLimiter } from '../../shared/middlewares/rateLimiter.js';
 import {
   loginRules,
-  forgotPasswordRules,
+  requestAccessRules,
   verifyTokenRules,
   resetPasswordRules,
   registerRules,
@@ -46,7 +47,7 @@ router.post('/login', loginRules, validate, authController.login);
 
 /**
  * @openapi
- * /auth/forgot-password:
+ * /auth/request-access:
  *   post:
  *     tags: [Auth]
  *     summary: Solicitar enlace de acceso/registro
@@ -81,7 +82,7 @@ router.post('/login', loginRules, validate, authController.login);
  *       400:
  *         description: Correo inválido o dominio no permitido
  */
-router.post('/forgot-password', forgotPasswordRules, validate, authController.forgotPassword);
+router.post('/request-access', requestAccessLimiter, requestAccessRules, validate, authController.requestAccess);
 
 /**
  * @openapi

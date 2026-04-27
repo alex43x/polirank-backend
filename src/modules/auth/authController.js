@@ -27,10 +27,10 @@ export const getUserProfile = async (req, res, next) => {
   }
 };
 
-export const forgotPassword = async (req, res, next) => {
+export const requestAccess = async (req, res, next) => {
   try {
     const { correo } = req.body;
-    const result = await authService.forgotPassword(correo);
+    const result = await authService.requestAccess(correo);
     return ApiResponse.success(res, result);
   } catch (err) {
     next(err);

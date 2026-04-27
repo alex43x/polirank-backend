@@ -85,17 +85,21 @@ export async function getProfile(userId) {
   return { student, reviews, tries };
 }
 
-export async function forgotPassword(correo) {
+export async function requestAccess(correo) {
   const exists = !!(await Alumno.findOne({ where: { correo } }));
 
   const flowToken = jwt.sign({ correo, purpose: 'auth-flow' }, env.jwt.secret, { expiresIn: '1h' });
-  const link = `${env.frontendUrl}/auth/verify?token=${flowToken}`;
+  const link = `${env.appUrl}/auth/verify?token=${flowToken}`;
 
-  await sendMail({
-    to: correo,
-    subject: exists ? 'Restablecé tu contraseña — PoliRank' : 'Completá tu registro — PoliRank',
-    html: authTemplate({ link, isNew: !exists }),
-  });
+  try {
+    await sendMail({
+      to: correo,
+      subject: exists ? 'Restablecé tu contraseña — PoliRank' : 'Completá tu registro — PoliRank',
+      html: authTemplate({ link, isNew: !exists }),
+    });
+  } catch {
+    throw new AppError(ErrorCodes.INTERNAL_ERROR.code, 503, 'No se pudo enviar el correo. Intentá de nuevo más tarde.');
+  }
 
   return { sent: true };
 }

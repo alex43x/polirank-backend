@@ -1,12 +1,12 @@
 import { body, query } from 'express-validator';
 
-// const FPUNA_DOMAIN = /^[^\s@]+@fpuna\.edu\.py$/i;
+const FPUNA_DOMAIN = /^[^\s@]+@fpuna\.edu\.py$/i;
 
 const correoFpuna = (field = 'correo') =>
   body(field)
     .notEmpty().withMessage('El correo es requerido')
     .isEmail().withMessage('El correo debe tener formato válido')
-    // .matches(FPUNA_DOMAIN).withMessage('Solo se permiten correos @fpuna.edu.py')
+    .matches(FPUNA_DOMAIN).withMessage('Solo se permiten correos @fpuna.edu.py')
     .normalizeEmail({ gmail_remove_dots: false });
 
 export const loginRules = [
@@ -14,7 +14,7 @@ export const loginRules = [
   body('password').notEmpty().withMessage('La contraseña es requerida'),
 ];
 
-export const forgotPasswordRules = [correoFpuna()];
+export const requestAccessRules = [correoFpuna()];
 
 export const verifyTokenRules = [
   query('token').notEmpty().withMessage('El token es requerido'),
