@@ -4,3 +4,15 @@ utils/Scripts/dataTransfer/env
 utils/Scripts/dataTransfer/functions/__pycache__
 utils/Scripts/dataTransfer/config/credentials.json
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.pytest_cache/
+.ipynb_checkpoints/
+*.db
+*.sqlite
+
