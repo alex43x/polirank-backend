@@ -1,0 +1,8 @@
+psycopg2-binary>=2.9
+pandas>=2.0
+openpyxl>=3.1
+thefuzz>=0.22
+bcrypt>=4.0
+python-levenshtein>=0.25
+python-dotenv>=1.0.0
+pytest>=8.0.0

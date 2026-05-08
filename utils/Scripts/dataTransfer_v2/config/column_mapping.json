@@ -1,0 +1,31 @@
+{
+    "hojas_carreras": [
+        "IAE", "ICM", "IEK", "IEL", "IEN", "IIN",
+        "IMK", "ISP", "LCA", "LCI", "LCIk", "LEL",
+        "LGH", "TSE", "Cnel. Oviedo", "Villarrica"
+    ],
+    "fila_header": 10,
+    "columnas": {
+        "departamento": "DPTO.",
+        "asignatura": "Asignatura",
+        "nivel": "Nivel",
+        "semestre": "Sem/Grupo",
+        "sigla_carrera": "Sigla carrera",
+        "turno": "Turno",
+        "seccion": "Sección",
+        "titulo_docente": "Tít",
+        "apellido_docente": "Apellido",
+        "nombre_docente": "Nombre",
+        "correo_docente": "Correo Institucional"
+    },
+    "hojas_ignorar": [
+        "Códigos",
+        "Asignaturas Homólogas-DCB",
+        "Asignaturas Homólogas-DEE",
+        "Asignaturas Homologadas-DEI",
+        "Asignaturas Homólogas-DG"
+    ],
+    "usuarios": {
+        "dominio_permitido": "@fpuna.edu.py"
+    }
+}
