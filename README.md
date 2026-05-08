@@ -128,19 +128,7 @@ http://localhost:3000/docs
 
 Deberías ver una interfaz interactiva con toda la documentación de los endpoints.
 
-### Generar Documentación Swagger
-
-Si has añadido nuevos endpoints, regenera la documentación:
-
-```bash
-node swagger.js
-```
-
-Este comando:
-1. Lee todos tus archivos de rutas
-2. Escanea los comentarios JSDoc
-3. Genera `swagger_output.json`
-4. Actualiza la documentación
+La documentación se genera automáticamente en runtime al iniciar el servidor. No hay script ni archivo estático — los comentarios `@openapi` viven en cada archivo de rutas del módulo correspondiente.
 
 ---
 ## 🧪 Prueba Rápida de la API
@@ -161,40 +149,31 @@ Respuesta esperada:
 ## 📁 Estructura de Carpetas Explicada
 
 ```
-polirank-backend/
-├── controllers/        # Lógica de negocio para cada entidad
-│   ├── authController.js
-│   ├── studentController.js
-│   ├── courseController.js
-│   └── ...
-├── routes/            # Definición de rutas y endpoints
-│   ├── authRoutes.js
-│   ├── studentRoutes.js
-│   └── ...
-├── models/            # Modelos Sequelize (tablas de BD)
-│   ├── studentModel.js
-│   ├── courseModel.js
-│   └── ...
-├── middlewares/       # Middlewares (autenticación, roles, etc)
-│   ├── auth.js
-│   ├── role.js
-│   └── errorHandler.js
-├── db/                # Configuración de base de datos
-│   ├── connection.js  # Conexión a PostgreSQL
-│   └── pool.js
-├── utils/             # Utilidades (scripts, funciones comunes)
-│   └── Scripts/
-│       ├── app.py
-│       └── funciones.py
-├── .env               # Variables de entorno (NO commitear)
-├── .gitignore         # Archivos a ignorar en git
-├── app.js             # Configuración de Express
-├── server.js          # Punto de entrada
-├── swagger.js         # Configuración de Swagger
-├── swagger_output.json # Documentación Swagger generada
-├── package.json       # Dependencias del proyecto
-└── README.md          # Este archivo
+src/
+├── modules/
+│   ├── auth/          # Login, perfil, creación de contraseña
+│   ├── student/       # Gestión de alumnos
+│   ├── course/        # Gestión de cursos
+│   ├── review/        # Reviews de cursos
+│   ├── tries/         # Intentos de materias
+│   └── email/         # Servicio de emails 
+├── shared/
+│   ├── middlewares/   # auth, errorHandler, validate
+│   ├── errors/        # AppError, clases de error, errorCodes
+│   ├── permissions/   # permissionsMap, requirePermission, hasPermission
+│   └── http/          # ApiResponse
+├── config/            # db, env, logger, swagger
+├── models/            # Modelos Sequelize compartidos
+├── app.js
+└── server.js
 ```
+
+Cada módulo contiene: `controller`, `service`, `routes`, `validators`, `dto`.
+
+- **controller** — parsea el request, llama al service, aplica DTO, responde
+- **service** — toda la lógica de negocio y queries Sequelize
+- **validators** — validación de formato con `express-validator`
+- **dto** — transforma el modelo Sequelize en la shape que recibe el cliente
 
 
 
@@ -209,7 +188,7 @@ polirank-backend/
 ---
 
 
-**Última actualización:** 10 de enero de 2026
+**Última actualización:** 20 de abril de 2026
 
-**Versión del Backend:** 1.0.0
+**Versión del Backend:** 2.0.0
 

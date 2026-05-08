@@ -418,30 +418,34 @@ def extraer_primer_nombre_apellido(full_name):
     if not full_name:
         return "Sin Nombre"
     
-    # Normalizar espacios y usar Title Case (Primera Letra Mayúscula)
+    # Normalizar espacios y usar Title Case
     full_name = " ".join(full_name.split()).title()
     
     if "," in full_name:
         # Caso: "APELLIDOS, NOMBRES"
-        apellidos, nombres = full_name.split(",", 1)
-        p_nombre = nombres.strip().split()[0] if nombres.strip() else ""
-        p_apellido = apellidos.strip().split()[0] if apellidos.strip() else ""
+        partes_segmento = full_name.split(",", 1)
+        apellidos = partes_segmento[0].strip().split()
+        nombres = partes_segmento[1].strip().split()
+        
+        p_nombre = nombres[0] if nombres else ""
+        p_apellido = apellidos[0] if apellidos else ""
         return f"{p_nombre} {p_apellido}".strip()
     
     # Caso: "NOMBRES APELLIDOS"
     partes = full_name.split()
     if len(partes) < 2:
         return full_name
-    
-    # Heurística para Paraguay (Frecuentemente 2 nombres y 2 apellidos)
-    # Si hay 4 o más palabras, tomamos la 1ra y la 3ra (Primer Nombre y Primer Apellido)
-    if len(partes) >= 4:
-        # Ejemplo: "Juan Carlos Gomez Perez" -> "Juan Gomez"
+        
+    # Heurística mejorada:
+    # Si hay 4 partes (ej: Juan Carlos Gomez Perez), tomamos 1ra y 3ra.
+    if len(partes) == 4:
         return f"{partes[0]} {partes[2]}"
     
-    # Para 2 o 3 palabras, tomamos la 1ra y la 2da
-    # Ejemplo: "Juan Gomez" -> "Juan Gomez"
-    # Ejemplo: "Juan Gomez Perez" -> "Juan Gomez"
+    # Si hay 3 partes (ej: Juan Gomez Perez), tomamos 1ra y 2da.
+    if len(partes) == 3:
+        return f"{partes[0]} {partes[1]}"
+        
+    # Para cualquier otro caso (2 o 5+), tomamos 1ra y la mitad aproximada o solo 1ra y 2da
     return f"{partes[0]} {partes[1]}"
 
 
