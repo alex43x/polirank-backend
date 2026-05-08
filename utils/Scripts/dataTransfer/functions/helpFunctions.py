@@ -5,8 +5,7 @@ from tabulate import tabulate
 import tkinter as tk
 from tkinter import filedialog
 import unicodedata
-
-
+from typing import List, Optional, Any
 
 
 def limpiar_pantalla():
@@ -359,8 +358,10 @@ def estandarizar_nombre_asignatura(nombre):
     """
     if not nombre: return ""
     
-    # 1. Limpieza inicial
-    nombre = re.sub(r'\s*\(\*+\)', '', str(nombre))
+    # 1. Limpieza inicial: Remover texto entre paréntesis y corchetes
+    # Elimina (*), (Texto), [Texto], etc.
+    nombre = re.sub(r'\s*[\(\[].*?[\)\]]', '', str(nombre))
+    # Eliminar espacios extra que pudieran quedar
     nombre = ' '.join(nombre.split())
     
     # 2. DICCIONARIO DE CORRECCIONES (Aquí forzamos la mayúscula)
@@ -417,29 +418,233 @@ def extraer_primer_nombre_apellido(full_name):
     if not full_name:
         return "Sin Nombre"
     
-    # Normalizar espacios y usar Title Case (Primera Letra Mayúscula)
+    # Normalizar espacios y usar Title Case
     full_name = " ".join(full_name.split()).title()
     
     if "," in full_name:
         # Caso: "APELLIDOS, NOMBRES"
-        apellidos, nombres = full_name.split(",", 1)
-        p_nombre = nombres.strip().split()[0] if nombres.strip() else ""
-        p_apellido = apellidos.strip().split()[0] if apellidos.strip() else ""
+        partes_segmento = full_name.split(",", 1)
+        apellidos = partes_segmento[0].strip().split()
+        nombres = partes_segmento[1].strip().split()
+        
+        p_nombre = nombres[0] if nombres else ""
+        p_apellido = apellidos[0] if apellidos else ""
         return f"{p_nombre} {p_apellido}".strip()
     
     # Caso: "NOMBRES APELLIDOS"
     partes = full_name.split()
     if len(partes) < 2:
         return full_name
-    
-    # Heurística para Paraguay (Frecuentemente 2 nombres y 2 apellidos)
-    # Si hay 4 o más palabras, tomamos la 1ra y la 3ra (Primer Nombre y Primer Apellido)
-    if len(partes) >= 4:
-        # Ejemplo: "Juan Carlos Gomez Perez" -> "Juan Gomez"
+        
+    # Heurística mejorada:
+    # Si hay 4 partes (ej: Juan Carlos Gomez Perez), tomamos 1ra y 3ra.
+    if len(partes) == 4:
         return f"{partes[0]} {partes[2]}"
     
-    # Para 2 o 3 palabras, tomamos la 1ra y la 2da
-    # Ejemplo: "Juan Gomez" -> "Juan Gomez"
-    # Ejemplo: "Juan Gomez Perez" -> "Juan Gomez"
+    # Si hay 3 partes (ej: Juan Gomez Perez), tomamos 1ra y 2da.
+    if len(partes) == 3:
+        return f"{partes[0]} {partes[1]}"
+        
+    # Para cualquier otro caso (2 o 5+), tomamos 1ra y la mitad aproximada o solo 1ra y 2da
     return f"{partes[0]} {partes[1]}"
 
+
+def es_correo_estudiante(correo):
+    """
+    Verifica si un correo es de estudiante (@fpuna.edu.py)
+    """
+    if not correo:
+        return False
+    return '@fpuna.edu.py' in correo.lower()
+
+def estandarizar_nombre_carrera(carrera):
+    """
+    Devuelve las carreras con el formato esperado por el programita.
+    Formato esperado: Siglas de las carreras separadas por comas (si mas de una).
+    """
+    # 1. Quita tildes, cambia caracteres blancos a ','
+    CARRERAS = ["IIN", "ISP", "IMK", "IEK", "IEL", "IAE", "ICM", "IEN", "LCIK", "LEL", "LCA", "LGH", "LCI"]
+    carrera = unicodedata.normalize('NFD', carrera)
+    carrera = ''.join(c for c in carrera if unicodedata.category(c) != 'Mn')
+    reemplazar = ['-','(',')',' ']
+    proceso = carrera.strip()
+    for c in reemplazar:
+        proceso = proceso.replace(c,',')
+    proceso = proceso.split(",")
+    out = []
+
+    # 2. Correcion de errores de ortografia comunes, prepara la salida
+    for s in proceso:
+        if s.upper() in CARRERAS:
+            out.append(s.upper())
+        elif s.upper()=="LICK":
+            out.append("LCIK")
+        elif s.upper()=="IIF":
+            out.append("IIN")
+        elif s.upper()=="LHG":
+            out.append("LGH") 
+    
+    return ",".join(out)
+
+def filtrar_carreras(info, ruta_invalidos="usuarios_no_validos.txt") -> List[List[Any]]:
+    """
+    Recibe una lista de registros y devuelve la lista filtrada con la carrera normalizada.
+    Además gestiona correctamente el archivo de usuarios no válidos.
+    Cada registro `r` se asume como: [nombre, correo, ci, carreras]
+    """
+
+    def elem_a_str(x):
+        if x is None:
+            return ""
+        return str(x)
+
+    filtrado = []
+    invalidos = []
+
+    for r in info:
+        # proteger contra registros mal formados
+        if len(r) < 4:
+            invalidos.append(r)
+            continue
+
+        correo = r[1]
+        if es_correo_estudiante(correo):
+            carrera = estandarizar_nombre_carrera(r[3])
+            nombre = " ".join([n.capitalize() for n in r[0].split()]) if r[0] else ""
+            if carrera:
+                filtrado.append([nombre, correo, r[2], carrera])
+            else:
+                # correo válido pero no se pudo normalizar la carrera
+                invalidos.append(r)
+        else:
+            # correo no válido
+            invalidos.append(r)
+
+    # Escribir todos los usuarios no válidos de una sola vez.
+    # Usamos "w" para sobrescribir con el conjunto actual; cambiar a "a" para añadir.
+    if invalidos:
+        with open(ruta_invalidos, "w", encoding="utf-8", newline="\n") as f:
+            for r in invalidos:
+                linea = "|".join(elem_a_str(x) for x in r)
+                f.write(linea + "\n")
+
+    return filtrado
+
+def matriz_a_txt(matriz: List[List],
+    ruta_archivo: str,
+    separador: str = "|",
+    encabezados: Optional[List[str]] = None,
+    encoding: str = "utf-8",
+    tratar_none_como_vacio: bool = True
+):
+    """
+    Crea un archivo txt con el contenido de una matriz
+    Separador default: "|"
+    """
+    if not isinstance(matriz, list):
+        raise TypeError("El parámetro 'matriz' debe ser una lista de listas.")
+    for i, fila in enumerate(matriz):
+        if not isinstance(fila, list):
+            raise TypeError(f"Cada fila de 'matriz' debe ser una lista. Fila {i} no lo es.")
+
+    def elem_a_str(x):
+        if x is None and tratar_none_como_vacio:
+            return ""
+        return str(x)
+
+    # Abrir archivo y escribir
+    with open(ruta_archivo, "w", encoding=encoding, newline="\n") as f:
+        # escribir encabezados si se proporcionan
+        if encabezados is not None:
+            if not isinstance(encabezados, list) or not all(isinstance(h, str) for h in encabezados):
+                raise TypeError("Los 'encabezados' deben ser una lista de strings.")
+            f.write(separador.join(encabezados) + "\n")
+
+        # escribir cada fila de la matriz
+        for fila in matriz:
+            # convertir cada elemento a string y unir con el separador
+            linea = separador.join(elem_a_str(x) for x in fila)
+            f.write(linea + "\n")
+
+def _abrir_dialogo_guardar(title: str = "Guardar archivo de Malla",
+                           initialfile: str = "malla.xlsx",
+                           defaultextension: str = ".xlsx") -> Optional[str]:
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes('-topmost', True)
+    ruta = filedialog.asksaveasfilename(
+        title=title,
+        initialfile=initialfile,
+        defaultextension=defaultextension,
+        filetypes=[
+            ("Archivos de Excel", "*.xlsx *.xls"),
+            ("Todos los archivos", "*.*")
+        ]
+    )
+    root.destroy()
+    return ruta if ruta else None
+
+def guardar_matriz_como_excel(
+    matriz: List[List[Any]],
+    ruta: Optional[str] = None,
+    tiene_encabezado: bool = False,
+    sheet_name: str = "Sheet1"
+) -> Optional[str]:
+    """
+    Guarda una matriz (lista de listas) en un archivo Excel usando openpyxl.
+    - matriz: lista de filas, cada fila es una lista de valores.
+    - ruta: si None, abre diálogo para elegir dónde guardar.
+    - tiene_encabezado: si True, la primera fila se usa como encabezado (se escribe igual).
+    - Devuelve la ruta donde se guardó o None si se canceló o hubo error.
+    """
+    # Validaciones básicas
+    if not isinstance(matriz, list) or len(matriz) == 0:
+        print("❌ La matriz debe ser una lista de listas no vacía.")
+        return None
+
+    # Normalizar filas y filtrar None
+    filas = [list(f) for f in matriz if f is not None]
+
+    if len(filas) == 0:
+        print("❌ No hay filas válidas en la matriz.")
+        return None
+
+    # Determinar número máximo de columnas
+    max_cols = max(len(r) for r in filas)
+
+    # Rellenar filas cortas con cadenas vacías
+    filas_normalizadas = []
+    for r in filas:
+        if len(r) < max_cols:
+            r = list(r) + [""] * (max_cols - len(r))
+        filas_normalizadas.append(r)
+
+    # Obtener ruta si no se proporcionó
+    if ruta is None:
+        ruta = _abrir_dialogo_guardar()
+        if ruta is None:
+            print("❌ No se seleccionó ninguna ruta de guardado.")
+            return None
+
+    # Crear workbook y hoja
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = sheet_name
+
+    # Escribir filas en la hoja
+    try:
+        for row_idx, fila in enumerate(filas_normalizadas, start=1):
+            for col_idx, valor in enumerate(fila, start=1):
+                ws.cell(row=row_idx, column=col_idx, value=valor)
+
+        # Asegurar extensión .xlsx
+        if not ruta.lower().endswith((".xlsx", ".xlsm", ".xltx", ".xltm")):
+            ruta = ruta + ".xlsx"
+
+        wb.save(ruta)
+        wb.close()
+        print(f"✅ Archivo guardado en: {ruta}")
+        return ruta
+    except Exception as e:
+        print(f"❌ Error al guardar el archivo: {e}")
+        return None
