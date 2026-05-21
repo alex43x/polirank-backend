@@ -15,7 +15,7 @@ import sectionRoutes from './modules/section/sectionRoutes.js';
 import authMiddleware from './shared/middlewares/auth.js';
 import { requirePermission } from './shared/permissions/requirePermission.js';
 import errorHandler from './shared/middlewares/errorHandler.js';
-import { globalLimiter, authLimiter } from './shared/middlewares/rateLimiter.js';
+import { globalLimiter } from './shared/middlewares/rateLimiter.js';
 import { NotFoundError } from './shared/errors/httpErrors.js';
 
 const app = express();
@@ -26,7 +26,7 @@ app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 
 app.use(globalLimiter);
 
-app.use('/auth',     authLimiter, authRoutes);
+app.use('/auth',     authRoutes);
 app.use('/alumnos',  authMiddleware, requirePermission('student:read'),  studentRoutes);
 app.use('/materias', authMiddleware, requirePermission('subject:read'),  subjectRoutes);
 app.use('/docentes', authMiddleware, requirePermission('teacher:read'),  teacherRoutes);
