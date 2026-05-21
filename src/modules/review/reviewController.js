@@ -63,3 +63,30 @@ export const deleteReview = async (req, res, next) => {
     next(err);
   }
 };
+
+export const deleteComentario = async (req, res, next) => {
+  try {
+    await reviewService.deleteComentario(req.params.id, req.user.id);
+    return ApiResponse.success(res, { message: 'Comentario eliminado exitosamente' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const voteComentario = async (req, res, next) => {
+  try {
+    const review = await reviewService.voteComentario(req.params.id, req.body.valor, req.user.id);
+    return ApiResponse.success(res, selectDto(req)(review));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteVoteComentario = async (req, res, next) => {
+  try {
+    await reviewService.deleteVoteComentario(req.params.id, req.user.id);
+    return ApiResponse.success(res, { message: 'Voto eliminado exitosamente' });
+  } catch (err) {
+    next(err);
+  }
+};

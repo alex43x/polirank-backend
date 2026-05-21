@@ -6,6 +6,8 @@ import Aspecto from '../../models/aspectModel.js';
 import Section from '../../models/sectionModel.js';
 import Teacher from '../../models/teacherModel.js';
 import Subject from '../../models/subjectModel.js';
+import Comentario from '../../models/commentModel.js';
+import VotoComentario from '../../models/commentVoteModel.js';
 import { NotFoundError, ConflictError, ValidationError } from '../../shared/errors/httpErrors.js';
 import AppError from '../../shared/errors/AppError.js';
 import { ErrorCodes } from '../../shared/errors/errorCodes.js';
@@ -32,6 +34,7 @@ function withReviewAssociations(filters = {}) {
       ],
     },
     { association: 'Alumno', attributes: ['id', 'nombre', 'correo'] },
+    { association: 'Comentario', include: [{ association: 'votos' }] },
   ];
 }
 
@@ -62,7 +65,7 @@ export async function getReviewById(id, { userId, isAdmin }) {
   return review;
 }
 
-export async function createReview({ curso, aspectos }, alumnoId) {
+export async function createReview({ curso, aspectos, texto }, alumnoId) {
   const courseExists = await Curso.findByPk(curso);
   if (!courseExists) throw new NotFoundError(ErrorCodes.COURSE_NOT_FOUND.code, 'El curso no existe');
 
@@ -81,10 +84,12 @@ export async function createReview({ curso, aspectos }, alumnoId) {
     aspectos.map((item) => ReviewCont.create({ revcab: reviewCab.id, aspecto: item.aspecto, valor: item.valor }))
   );
 
+  if (texto) await Comentario.create({ revcab: reviewCab.id, texto });
+
   return ReviewCab.findByPk(reviewCab.id, { include: withReviewAssociations() });
 }
 
-export async function updateReview(id, { aspectos }, userId) {
+export async function updateReview(id, { aspectos, texto }, userId) {
   const review = await ReviewCab.findByPk(id);
   if (!review) throw new NotFoundError(ErrorCodes.REVIEW_NOT_FOUND.code, 'Review no encontrado');
 
@@ -112,6 +117,15 @@ export async function updateReview(id, { aspectos }, userId) {
     }
   }
 
+  if (texto !== undefined) {
+    const comentario = await Comentario.findOne({ where: { revcab: id } });
+    if (comentario) {
+      await comentario.update({ texto });
+    } else {
+      await Comentario.create({ revcab: id, texto });
+    }
+  }
+
   return ReviewCab.findByPk(id, { include: withReviewAssociations() });
 }
 
@@ -125,4 +139,51 @@ export async function deleteReview(id, userId) {
 
   await ReviewCont.destroy({ where: { revcab: id } });
   await ReviewCab.destroy({ where: { id } });
+}
+
+export async function deleteComentario(reviewId, userId) {
+  const review = await ReviewCab.findByPk(reviewId);
+  if (!review) throw new NotFoundError(ErrorCodes.REVIEW_NOT_FOUND.code, 'Review no encontrado');
+
+  if (review.alumno !== userId) {
+    throw new AppError(ErrorCodes.INSUFFICIENT_PERMISSIONS.code, 403, 'No tenés permiso para eliminar este comentario');
+  }
+
+  const comentario = await Comentario.findOne({ where: { revcab: reviewId } });
+  if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
+
+  await VotoComentario.destroy({ where: { comentario: comentario.id } });
+  await comentario.destroy();
+}
+
+export async function voteComentario(reviewId, valor, userId) {
+  const review = await ReviewCab.findByPk(reviewId);
+  if (!review) throw new NotFoundError(ErrorCodes.REVIEW_NOT_FOUND.code, 'Review no encontrado');
+
+  if (review.alumno === userId) {
+    throw new AppError(ErrorCodes.INSUFFICIENT_PERMISSIONS.code, 403, 'No podés votar tu propio comentario');
+  }
+
+  const comentario = await Comentario.findOne({ where: { revcab: reviewId } });
+  if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
+
+  const [voto, created] = await VotoComentario.findOrCreate({
+    where: { comentario: comentario.id, alumno: userId },
+    defaults: { valor },
+  });
+
+  if (!created) await voto.update({ valor });
+
+  return ReviewCab.findByPk(reviewId, { include: withReviewAssociations() });
+}
+
+export async function deleteVoteComentario(reviewId, userId) {
+  const review = await ReviewCab.findByPk(reviewId);
+  if (!review) throw new NotFoundError(ErrorCodes.REVIEW_NOT_FOUND.code, 'Review no encontrado');
+
+  const comentario = await Comentario.findOne({ where: { revcab: reviewId } });
+  if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
+
+  const deleted = await VotoComentario.destroy({ where: { comentario: comentario.id, alumno: userId } });
+  if (deleted === 0) throw new NotFoundError(ErrorCodes.VOTE_NOT_FOUND.code, 'Voto no encontrado');
 }

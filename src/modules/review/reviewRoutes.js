@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requirePermission } from '../../shared/permissions/requirePermission.js';
-import { createReviewRules } from './reviewValidators.js';
+import { createReviewRules, votoComentarioRules } from './reviewValidators.js';
 import { validate } from '../../shared/middlewares/validate.js';
 import * as reviewController from './reviewController.js';
 
@@ -293,6 +293,11 @@ router.get('/:id', reviewController.getReviewById);
  *                       minimum: 1
  *                       maximum: 5
  *                       example: 4
+ *               texto:
+ *                 type: string
+ *                 maxLength: 1000
+ *                 description: Comentario opcional del alumno sobre el curso
+ *                 example: Excelente docente, muy claro en sus explicaciones.
  *     responses:
  *       201:
  *         description: Review creada
@@ -414,6 +419,11 @@ router.post('/', requirePermission('review:write'), createReviewRules, validate,
  *                       type: integer
  *                       minimum: 1
  *                       maximum: 5
+ *               texto:
+ *                 type: string
+ *                 maxLength: 1000
+ *                 description: Crea o actualiza el comentario de la review. Si se omite, no se modifica.
+ *                 example: Actualicé mi opinión sobre el docente.
  *     responses:
  *       200:
  *         description: Review actualizada
@@ -545,5 +555,85 @@ router.put('/:id', requirePermission('review:update'), reviewController.updateRe
  *               $ref: '#/components/schemas/Error'
  */
 router.delete('/:id', requirePermission('review:delete'), reviewController.deleteReview);
+
+/**
+ * @openapi
+ * /reviews/{id}/comentario:
+ *   delete:
+ *     tags: [Reviews]
+ *     summary: Eliminar comentario de una review
+ *     description: Solo el autor de la review puede eliminar el comentario. Elimina también los votos asociados.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Comentario eliminado
+ *       404:
+ *         description: Review o comentario no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.delete('/:id/comentario', requirePermission('review:update'), reviewController.deleteComentario);
+
+/**
+ * @openapi
+ * /reviews/{id}/comentario/voto:
+ *   post:
+ *     tags: [Reviews]
+ *     summary: Votar un comentario
+ *     description: Cualquier usuario autenticado puede votar. No se puede votar el propio comentario. Si ya votó, actualiza el voto.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [valor]
+ *             properties:
+ *               valor:
+ *                 type: integer
+ *                 enum: [-1, 1]
+ *                 description: 1 = útil, -1 = no útil
+ *                 example: 1
+ *     responses:
+ *       200:
+ *         description: Voto registrado, devuelve la review con puntuación actualizada
+ *       403:
+ *         description: No podés votar tu propio comentario
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *   delete:
+ *     tags: [Reviews]
+ *     summary: Eliminar voto de un comentario
+ *     description: Elimina el voto del usuario autenticado en el comentario de la review.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Voto eliminado
+ *       404:
+ *         description: Voto no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/:id/comentario/voto', requirePermission('review:access'), votoComentarioRules, validate, reviewController.voteComentario);
+router.delete('/:id/comentario/voto', requirePermission('review:access'), reviewController.deleteVoteComentario);
 
 export default router;
