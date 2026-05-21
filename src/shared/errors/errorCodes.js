@@ -25,4 +25,7 @@ export const ErrorCodes = Object.freeze({
   CAREER_NOT_FOUND:            { code: 'career_not_found',            status: 404 },
   CAREER_LIMIT_EXCEEDED:       { code: 'career_limit_exceeded',       status: 400 },
   STUDENT_ALREADY_EXISTS:      { code: 'student_already_exists',      status: 409 },
+  COMMENT_NOT_FOUND:           { code: 'comment_not_found',           status: 404 },
+  COMMENT_ALREADY_EXISTS:      { code: 'comment_already_exists',      status: 409 },
+  VOTE_NOT_FOUND:              { code: 'vote_not_found',              status: 404 },
 });
