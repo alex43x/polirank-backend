@@ -74,6 +74,7 @@ export async function getProfile(userId) {
       include: [
         { association: 'contenidos', include: [{ association: 'Aspecto' }] },
         { association: 'Curso', include: [{ association: 'Seccion', include: [{ association: 'Docente' }, { association: 'Materia' }] }] },
+        { association: 'Comentario', include: [{ association: 'votos' }] },
       ],
     }),
     Intento.findAndCountAll({
