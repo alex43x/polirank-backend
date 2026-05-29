@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requirePermission } from '../../shared/permissions/requirePermission.js';
-import { createReviewRules, votoComentarioRules } from './reviewValidators.js';
+import { createReviewRules, votoComentarioRules, reporteComentarioRules } from './reviewValidators.js';
 import { validate } from '../../shared/middlewares/validate.js';
 import * as reviewController from './reviewController.js';
 
@@ -635,5 +635,7 @@ router.delete('/:id/comentario', requirePermission('review:update'), reviewContr
  */
 router.post('/:id/comentario/voto', requirePermission('review:access'), votoComentarioRules, validate, reviewController.voteComentario);
 router.delete('/:id/comentario/voto', requirePermission('review:access'), reviewController.deleteVoteComentario);
+
+router.post('/:id/comentario/reporte', requirePermission('review:write'), reporteComentarioRules, validate, reviewController.reportComentario);
 
 export default router;

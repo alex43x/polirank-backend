@@ -8,6 +8,7 @@ import Teacher from '../../models/teacherModel.js';
 import Subject from '../../models/subjectModel.js';
 import Comentario from '../../models/commentModel.js';
 import VotoComentario from '../../models/commentVoteModel.js';
+import ReporteComentario from '../../models/reportModel.js';
 import { NotFoundError, ConflictError, ValidationError } from '../../shared/errors/httpErrors.js';
 import AppError from '../../shared/errors/AppError.js';
 import { ErrorCodes } from '../../shared/errors/errorCodes.js';
@@ -186,4 +187,36 @@ export async function deleteVoteComentario(reviewId, userId) {
 
   const deleted = await VotoComentario.destroy({ where: { comentario: comentario.id, alumno: userId } });
   if (deleted === 0) throw new NotFoundError(ErrorCodes.VOTE_NOT_FOUND.code, 'Voto no encontrado');
+}
+
+export async function reportComentario(reviewId, { reason_type, reason_detail }, userId, userRole) {
+  if (userRole === 'GUEST') {
+    throw new AppError(ErrorCodes.INSUFFICIENT_PERMISSIONS.code, 403, 'Los invitados no pueden reportar comentarios');
+  }
+
+  const review = await ReviewCab.findByPk(reviewId);
+  if (!review) throw new NotFoundError(ErrorCodes.REVIEW_NOT_FOUND.code, 'Review no encontrado');
+
+  const comentario = await Comentario.findOne({ where: { revcab: reviewId } });
+  if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
+
+  if (comentario.is_banned) {
+    throw new AppError(ErrorCodes.COMMENT_BANNED.code, 400, 'El comentario ya está baneado');
+  }
+
+  const existente = await ReporteComentario.findOne({
+    where: { comentario_id: comentario.id, reporter_id: userId },
+  });
+  if (existente) {
+    throw new ConflictError(ErrorCodes.REPORT_ALREADY_EXISTS.code, 'Ya reportaste este comentario');
+  }
+
+  await ReporteComentario.create({
+    comentario_id: comentario.id,
+    reporter_id: userId,
+    reason_type,
+    reason_detail: reason_detail || null,
+  });
+
+  return { message: 'Reporte enviado exitosamente' };
 }

@@ -28,4 +28,8 @@ export const ErrorCodes = Object.freeze({
   COMMENT_NOT_FOUND:           { code: 'comment_not_found',           status: 404 },
   COMMENT_ALREADY_EXISTS:      { code: 'comment_already_exists',      status: 409 },
   VOTE_NOT_FOUND:              { code: 'vote_not_found',              status: 404 },
+  REPORT_NOT_FOUND:            { code: 'report_not_found',            status: 404 },
+  REPORT_ALREADY_EXISTS:       { code: 'report_already_exists',       status: 409 },
+  REPORT_ALREADY_REVIEWED:     { code: 'report_already_reviewed',     status: 409 },
+  COMMENT_BANNED:              { code: 'comment_banned',              status: 400 },
 });

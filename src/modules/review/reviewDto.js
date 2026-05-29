@@ -31,7 +31,8 @@ const toComentarioDto = (comentario) => {
   const votosNegativos = votos.filter((v) => v.valor === -1).length;
   return {
     id: comentario.id,
-    texto: comentario.texto,
+    texto: comentario.is_banned ? null : comentario.texto,
+    is_banned: comentario.is_banned,
     created_at: comentario.created_at,
     puntuacion: votosPositivos - votosNegativos,
     votosPositivos,

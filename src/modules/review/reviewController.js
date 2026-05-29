@@ -90,3 +90,17 @@ export const deleteVoteComentario = async (req, res, next) => {
     next(err);
   }
 };
+
+export const reportComentario = async (req, res, next) => {
+  try {
+    const result = await reviewService.reportComentario(
+      req.params.id,
+      { reason_type: req.body.reason_type, reason_detail: req.body.reason_detail },
+      req.user.id,
+      req.user.rol,
+    );
+    return res.status(201).json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+};

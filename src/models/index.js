@@ -16,6 +16,7 @@ import Estadistica from "./statsModel.js";
 import Matriculacion from "./enrollmentModel.js";
 import Comentario from "./commentModel.js";
 import VotoComentario from "./commentVoteModel.js";
+import ReporteComentario from "./reportModel.js";
 
 // Alumno - Rol
 Alumno.belongsTo(Rol, { foreignKey: 'rol', as: 'Rol' });
@@ -97,4 +98,16 @@ Comentario.hasMany(VotoComentario, { foreignKey: 'comentario', as: 'votos' });
 VotoComentario.belongsTo(Alumno, { foreignKey: 'alumno', as: 'Alumno' });
 Alumno.hasMany(VotoComentario, { foreignKey: 'alumno', as: 'votosComentarios' });
 
-export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, Estadistica, Matriculacion, Comentario, VotoComentario, sequelize };
+// ReporteComentario - Comentario
+ReporteComentario.belongsTo(Comentario, { foreignKey: 'comentario_id', as: 'Comentario' });
+Comentario.hasMany(ReporteComentario, { foreignKey: 'comentario_id', as: 'reportes' });
+
+// ReporteComentario - Reporter (Alumno)
+ReporteComentario.belongsTo(Alumno, { foreignKey: 'reporter_id', as: 'Reporter' });
+Alumno.hasMany(ReporteComentario, { foreignKey: 'reporter_id', as: 'reportes' });
+
+// ReporteComentario - Reviewer (Alumno)
+ReporteComentario.belongsTo(Alumno, { foreignKey: 'reviewed_by', as: 'Reviewer' });
+Alumno.hasMany(ReporteComentario, { foreignKey: 'reviewed_by', as: 'revisiones' });
+
+export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, Estadistica, Matriculacion, Comentario, VotoComentario, ReporteComentario, sequelize };

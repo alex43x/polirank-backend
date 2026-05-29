@@ -8,6 +8,7 @@ import authRoutes from './modules/auth/authRoutes.js';
 import studentRoutes from './modules/student/studentRoutes.js';
 import courseRoutes from './modules/course/courseRoutes.js';
 import reviewRoutes from './modules/review/reviewRoutes.js';
+import reportsRoutes from './modules/reports/reportsRoutes.js';
 import subjectRoutes from './modules/subject/subjectRoutes.js';
 import teacherRoutes from './modules/teacher/teacherRoutes.js';
 import triesRoutes from './modules/tries/triesRoutes.js';
@@ -32,8 +33,9 @@ app.use('/materias', authMiddleware, requirePermission('subject:read'),  subject
 app.use('/docentes', authMiddleware, requirePermission('teacher:read'),  teacherRoutes);
 app.use('/cursos',   authMiddleware, requirePermission('course:read'),   courseRoutes);
 app.use('/sections', authMiddleware, requirePermission('section:read'),  sectionRoutes);
-app.use('/reviews',  authMiddleware, requirePermission('review:access'), reviewRoutes);
-app.use('/intentos', authMiddleware, requirePermission('try:access'),    triesRoutes);
+app.use('/reviews',  authMiddleware, requirePermission('review:access'),     reviewRoutes);
+app.use('/reports',  authMiddleware, requirePermission('review:read:all'),  reportsRoutes);
+app.use('/intentos', authMiddleware, requirePermission('try:access'),       triesRoutes);
 
 if (process.env.NODE_ENV !== 'production') {
   app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
