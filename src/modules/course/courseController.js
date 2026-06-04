@@ -1,14 +1,16 @@
 import Curso from '../../models/courseModel.js';
-import Seccion from '../../models/sectionModel.js';
-import Materia from '../../models/subjectModel.js';
-import Docente from '../../models/teacherModel.js';
 import ReviewCab from '../../models/reviewCab.js';
+import Comment from '../../models/commentModel.js';
+import Section from '../../models/sectionModel.js';
+import Teacher from '../../models/teacherModel.js';
+import Subject from '../../models/subjectModel.js';
 import ReviewCont from '../../models/reviewCont.js';
-import Alumno from '../../models/studentModel.js';
 import Aspecto from '../../models/aspectModel.js';
+import Student from '../../models/studentModel.js';
 import { ApiResponse } from '../../shared/http/respond.js';
 import { NotFoundError } from '../../shared/errors/httpErrors.js';
 import { ErrorCodes } from '../../shared/errors/errorCodes.js';
+import { toStudentReviewDto } from '../review/reviewDto.js';
 import { toCourseDto } from './courseDto.js';
 
 function withCourseAssociations() {
@@ -70,14 +72,15 @@ export const getReviewsByCourse = async (req, res, next) => {
     const reviews = await ReviewCab.findAndCountAll({
       where: { curso: id },
       include: [
-        { association: 'contenidos', include: [{ model: Aspecto }] },
+        { association: 'contenidos', include: [{ model: Aspecto, as: 'Aspecto' }] },
         { association: 'Alumno' },
+        { association: 'Comentario', include: [{ association: 'votos' }] },
       ],
       limit,
       offset,
     });
 
-    return ApiResponse.success(res, reviews.rows, {
+    return ApiResponse.success(res, reviews.rows.map(toStudentReviewDto), {
       total: reviews.count,
       totalPages: Math.ceil(reviews.count / limit),
       page,

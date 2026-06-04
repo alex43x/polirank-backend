@@ -13,6 +13,7 @@ import subjectRoutes from './modules/subject/subjectRoutes.js';
 import teacherRoutes from './modules/teacher/teacherRoutes.js';
 import triesRoutes from './modules/tries/triesRoutes.js';
 import sectionRoutes from './modules/section/sectionRoutes.js';
+import careerRoutes from './modules/career/careerRoutes.js';
 import authMiddleware from './shared/middlewares/auth.js';
 import { requirePermission } from './shared/permissions/requirePermission.js';
 import errorHandler from './shared/middlewares/errorHandler.js';
@@ -28,6 +29,7 @@ app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(globalLimiter);
 
 app.use('/auth',     authRoutes);
+app.use('/carreras', careerRoutes);
 app.use('/alumnos',  authMiddleware, requirePermission('student:read'),  studentRoutes);
 app.use('/materias', authMiddleware, requirePermission('subject:read'),  subjectRoutes);
 app.use('/docentes', authMiddleware, requirePermission('teacher:read'),  teacherRoutes);

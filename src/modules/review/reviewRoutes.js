@@ -638,4 +638,9 @@ router.delete('/:id/comentario/voto', requirePermission('review:access'), review
 
 router.post('/:id/comentario/reporte', requirePermission('review:write'), reporteComentarioRules, validate, reviewController.reportComentario);
 
+// Moderación (Admin)
+router.get('/moderacion/pendientes', requirePermission('review:read:all'), reviewController.getPendientesModeracion);
+router.patch('/:id/comentario/aprobar', requirePermission('review:read:all'), reviewController.aprobarComentario);
+router.delete('/:id/comentario/moderacion', requirePermission('review:read:all'), reviewController.rechazarComentarioModeracion);
+
 export default router;

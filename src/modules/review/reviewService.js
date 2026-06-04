@@ -85,7 +85,7 @@ export async function createReview({ curso, aspectos, texto }, alumnoId) {
     aspectos.map((item) => ReviewCont.create({ revcab: reviewCab.id, aspecto: item.aspecto, valor: item.valor }))
   );
 
-  if (texto) await Comentario.create({ revcab: reviewCab.id, texto });
+  if (texto) await Comentario.create({ revcab: reviewCab.id, texto, aprobado: false });
 
   return ReviewCab.findByPk(reviewCab.id, { include: withReviewAssociations() });
 }
@@ -121,9 +121,9 @@ export async function updateReview(id, { aspectos, texto }, userId) {
   if (texto !== undefined) {
     const comentario = await Comentario.findOne({ where: { revcab: id } });
     if (comentario) {
-      await comentario.update({ texto });
+      await comentario.update({ texto, aprobado: false });
     } else {
-      await Comentario.create({ revcab: id, texto });
+      await Comentario.create({ revcab: id, texto, aprobado: false });
     }
   }
 
@@ -219,4 +219,60 @@ export async function reportComentario(reviewId, { reason_type, reason_detail },
   });
 
   return { message: 'Reporte enviado exitosamente' };
+}
+
+export async function getPendientesModeracion({ page = 1, limit = 10 } = {}) {
+  const offset = (page - 1) * limit;
+
+  return ReviewCab.findAndCountAll({
+    include: [
+      {
+        association: 'contenidos',
+        include: [{ association: 'Aspecto' }],
+        order: [['id', 'ASC']],
+      },
+      {
+        association: 'Curso',
+        include: [{
+          association: 'Seccion',
+          attributes: ['id'],
+          include: [
+            { association: 'Docente' },
+            { association: 'Materia' },
+          ],
+        }],
+      },
+      { association: 'Alumno', attributes: ['id', 'nombre', 'correo'] },
+      { association: 'Comentario', required: true, where: { aprobado: false }, include: [{ association: 'votos' }] },
+    ],
+    order: [['fecha', 'DESC']],
+    limit,
+    offset,
+    distinct: true,
+  });
+}
+
+export async function aprobarComentario(reviewId) {
+  const review = await ReviewCab.findByPk(reviewId);
+  if (!review) throw new NotFoundError(ErrorCodes.REVIEW_NOT_FOUND.code, 'Review no encontrado');
+
+  const comentario = await Comentario.findOne({ where: { revcab: reviewId } });
+  if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
+
+  await comentario.update({ aprobado: true });
+
+  return ReviewCab.findByPk(reviewId, { include: withReviewAssociations() });
+}
+
+export async function rechazarComentarioModeracion(reviewId) {
+  const review = await ReviewCab.findByPk(reviewId);
+  if (!review) throw new NotFoundError(ErrorCodes.REVIEW_NOT_FOUND.code, 'Review no encontrado');
+
+  const comentario = await Comentario.findOne({ where: { revcab: reviewId } });
+  if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
+
+  await VotoComentario.destroy({ where: { comentario: comentario.id } });
+  await comentario.destroy();
+
+  return { message: 'Comentario rechazado y eliminado correctamente' };
 }

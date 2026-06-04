@@ -9,6 +9,7 @@ const Comentario = sequelize.define(
     texto: { type: DataTypes.TEXT, allowNull: false },
     is_banned: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     banned_at: { type: DataTypes.DATE, allowNull: true },
+    aprobado: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     created_at: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   },
   {

@@ -91,6 +91,40 @@ export const deleteVoteComentario = async (req, res, next) => {
   }
 };
 
+export const getPendientesModeracion = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const result = await reviewService.getPendientesModeracion({ page, limit });
+    return ApiResponse.success(res, result.rows.map(toAdminReviewDto), {
+      total: result.count,
+      totalPages: Math.ceil(result.count / limit),
+      page,
+      limit,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const aprobarComentario = async (req, res, next) => {
+  try {
+    const review = await reviewService.aprobarComentario(req.params.id);
+    return ApiResponse.success(res, toAdminReviewDto(review));
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const rechazarComentarioModeracion = async (req, res, next) => {
+  try {
+    const result = await reviewService.rechazarComentarioModeracion(req.params.id);
+    return ApiResponse.success(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const reportComentario = async (req, res, next) => {
   try {
     const result = await reviewService.reportComentario(

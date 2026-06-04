@@ -33,6 +33,8 @@ const toComentarioDto = (comentario) => {
     id: comentario.id,
     texto: comentario.is_banned ? null : comentario.texto,
     is_banned: comentario.is_banned,
+    aprobado: comentario.aprobado,
+    bajo_moderacion: !comentario.aprobado && !comentario.is_banned,
     created_at: comentario.created_at,
     puntuacion: votosPositivos - votosNegativos,
     votosPositivos,
@@ -46,6 +48,9 @@ export const toStudentReviewDto = (r) => ({
   curso: toCourseDto(r.Curso),
   detalles: toDetailsDto(r.contenidos),
   comentario: toComentarioDto(r.Comentario),
+  alumno: r.Alumno
+    ? { id: r.Alumno.id, nombre: r.Alumno.nombre, correo: r.Alumno.correo }
+    : null,
 });
 
 export const toAdminReviewDto = (r) => ({
