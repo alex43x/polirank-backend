@@ -36,6 +36,47 @@ CARRERA_MAP = {
     "iif": "IIN",
 }
 
+# Equivalencias para unificar materias con nombres diferentes según la carrera
+EQUIVALENCIAS_ASIGNATURAS = {
+    ## CIENCIAS BASICAS DCB
+    "Fundamentos de Matemática": "Geometría Analítica",                     #iin
+    "Geometría Analítica y Vectores": "Geometría Analítica",
+    "Cálculo Aplicado": "Cálculo VI",                                       #lel
+    "Métodos Numéricos en Ciencias de la Atmósfera": "Métodos Numéricos",   #lca
+    "Termodinámica": "Física IV",                                           #lel
+    "Física Moderna": "Física V",                                           #icm
+    "Mecánica Clásica": "Física I",                                         #iae
+    "Mecánica de Fluidos": "Física VIII",                                   #iek,isp,lca,lel
+    "Química": "Química I",                                                 #iae,iek,iel,ien,isp,lca
+    "Mecánica de Materiales": "Mecánica",                                   #iae
+
+    ## ELECTRONICA (O ELECTRICIDAD NOSE) DEE
+    "Introducción a la Electrónica": "Electrónica I",                       #lel
+    "Sistemas Neumáticos e Hidráulicos": "Sistemas Neumáticos Industriales",#lel
+
+    ## INFORMATICA
+    "Informática Aplicada": "Informática I",                                #iek
+
+    ## DGE (??)
+    "Comunicación Oral y Escrita": "Castellano",                            #iek
+    "Expresión Oral y Escrita": "Castellano",                               #isp,iin,lgh
+    "Comunicación": "Castellano",                                           #lci
+    "Contabilidad I": "Contabilidad",                                       #lgh
+    "Administración I": "Contabilidad",                                     #lcik
+    "Legislación": "Derecho",                                               #isp
+    "Leyes": "Derecho",                                                     #lgh
+    "Administración II": "Economía y Finanzas",                             #lcik
+    "Inglés": "Inglés I",                                                   #iin
+    "Idioma I": "Inglés I",                                                 #iek
+    "Inglés Técnico": "Inglés I",                                           #lcik
+    "Electiva - Inglés Técnico I": "Inglés I",                              #lci
+    "Idioma II": "Inglés II",                                               #iek
+    "Organización, Sistemas y Métodos": "Técnicas de Organización y Métodos", #isp
+    "Administración III": "Técnicas de Organización y Métodos",             #lcik
+    "Costos e Ingeniería Económica": "Ingeniería Económica",                #ien
+}
+
+
 def normalizar_texto(texto: str) -> str:
     """Elimina acentos, convierte a minúsculas, colapsa espacios."""
     if not texto: return ""
@@ -51,6 +92,11 @@ def normalizar_titulo_asignatura(titulo: str) -> str:
     titulo = re.sub(r'\s*[\(\[].*?[\)\]]', '', str(titulo))
     titulo = ' '.join(titulo.split())
     
+    # Mapear equivalencias/sinónimos usando el texto normalizado (minúsculas, sin tildes)
+    titulo_norm = normalizar_texto(titulo)
+    if titulo_norm in EQUIVALENCIAS_ASIGNATURAS:
+        titulo = EQUIVALENCIAS_ASIGNATURAS[titulo_norm]
+
     # 2. Corregir typos (insensible a mayúsculas usando replace)
     for typo, correcto in TYPO_MAP.items():
         # Usar re.IGNORECASE para typps
