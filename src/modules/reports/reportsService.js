@@ -4,6 +4,7 @@ import ReviewCab from '../../models/reviewCab.js';
 import Alumno from '../../models/studentModel.js';
 import { NotFoundError, ConflictError } from '../../shared/errors/httpErrors.js';
 import { ErrorCodes } from '../../shared/errors/errorCodes.js';
+import { COMMENT_STATUS } from '../../shared/constants/commentStatuses.js';
 
 const reportIncludes = [
   {
@@ -40,7 +41,7 @@ export async function aprobarReporte(reporteId, adminId) {
   const comentario = await Comentario.findByPk(reporte.comentario_id);
   if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
 
-  await comentario.update({ is_banned: true, banned_at: new Date() });
+  await comentario.update({ status: COMMENT_STATUS.BANEADO, banned_at: new Date() });
   await reporte.update({
     status: 'approved',
     reviewed_by: adminId,
@@ -71,7 +72,7 @@ export async function banearComentario(comentarioId, adminId) {
   const comentario = await Comentario.findByPk(comentarioId);
   if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
 
-  await comentario.update({ is_banned: true, banned_at: new Date() });
+  await comentario.update({ status: COMMENT_STATUS.BANEADO, banned_at: new Date() });
 
   return Comentario.findByPk(comentarioId);
 }
