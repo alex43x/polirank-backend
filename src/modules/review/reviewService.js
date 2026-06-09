@@ -12,6 +12,7 @@ import ReporteComentario from '../../models/reportModel.js';
 import { NotFoundError, ConflictError, ValidationError } from '../../shared/errors/httpErrors.js';
 import AppError from '../../shared/errors/AppError.js';
 import { ErrorCodes } from '../../shared/errors/errorCodes.js';
+import { COMMENT_STATUS } from '../../shared/constants/commentStatuses.js';
 
 function withReviewAssociations(filters = {}) {
   const { docente, materia } = filters;
@@ -85,7 +86,7 @@ export async function createReview({ curso, aspectos, texto }, alumnoId) {
     aspectos.map((item) => ReviewCont.create({ revcab: reviewCab.id, aspecto: item.aspecto, valor: item.valor }))
   );
 
-  if (texto) await Comentario.create({ revcab: reviewCab.id, texto, aprobado: false });
+  if (texto) await Comentario.create({ revcab: reviewCab.id, texto });
 
   return ReviewCab.findByPk(reviewCab.id, { include: withReviewAssociations() });
 }
@@ -121,9 +122,9 @@ export async function updateReview(id, { aspectos, texto }, userId) {
   if (texto !== undefined) {
     const comentario = await Comentario.findOne({ where: { revcab: id } });
     if (comentario) {
-      await comentario.update({ texto, aprobado: false });
+      await comentario.update({ texto, status: COMMENT_STATUS.EN_REVISION });
     } else {
-      await Comentario.create({ revcab: id, texto, aprobado: false });
+      await Comentario.create({ revcab: id, texto });
     }
   }
 
@@ -200,7 +201,7 @@ export async function reportComentario(reviewId, { reason_type, reason_detail },
   const comentario = await Comentario.findOne({ where: { revcab: reviewId } });
   if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
 
-  if (comentario.is_banned) {
+  if (comentario.status === COMMENT_STATUS.BANEADO) {
     throw new AppError(ErrorCodes.COMMENT_BANNED.code, 400, 'El comentario ya está baneado');
   }
 
@@ -243,7 +244,7 @@ export async function getPendientesModeracion({ page = 1, limit = 10 } = {}) {
         }],
       },
       { association: 'Alumno', attributes: ['id', 'nombre', 'correo'] },
-      { association: 'Comentario', required: true, where: { aprobado: false }, include: [{ association: 'votos' }] },
+      { association: 'Comentario', required: true, where: { status: COMMENT_STATUS.EN_REVISION }, include: [{ association: 'votos' }] },
     ],
     order: [['fecha', 'DESC']],
     limit,
@@ -259,7 +260,7 @@ export async function aprobarComentario(reviewId) {
   const comentario = await Comentario.findOne({ where: { revcab: reviewId } });
   if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
 
-  await comentario.update({ aprobado: true });
+  await comentario.update({ status: COMMENT_STATUS.APROBADO });
 
   return ReviewCab.findByPk(reviewId, { include: withReviewAssociations() });
 }
@@ -271,8 +272,7 @@ export async function rechazarComentarioModeracion(reviewId) {
   const comentario = await Comentario.findOne({ where: { revcab: reviewId } });
   if (!comentario) throw new NotFoundError(ErrorCodes.COMMENT_NOT_FOUND.code, 'Comentario no encontrado');
 
-  await VotoComentario.destroy({ where: { comentario: comentario.id } });
-  await comentario.destroy();
+  await comentario.update({ status: COMMENT_STATUS.BANEADO, banned_at: new Date() });
 
-  return { message: 'Comentario rechazado y eliminado correctamente' };
+  return { message: 'Comentario baneado correctamente' };
 }

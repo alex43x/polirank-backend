@@ -212,4 +212,6 @@ router.get('/:id/history', requirePermission('section:read'), sectionController.
  */
 router.get('/:id/cursos', requirePermission('section:read'), sectionController.getCoursesBySection);
 
+router.get('/:id/reviews', requirePermission('section:read'), sectionController.getReviewsBySection);
+
 export default router;

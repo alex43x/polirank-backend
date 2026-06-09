@@ -1,3 +1,5 @@
+import { COMMENT_STATUS } from '../../shared/constants/commentStatuses.js';
+
 const toCourseDto = (curso) => {
   if (!curso) return null;
   return {
@@ -31,10 +33,9 @@ const toComentarioDto = (comentario) => {
   const votosNegativos = votos.filter((v) => v.valor === -1).length;
   return {
     id: comentario.id,
-    texto: comentario.is_banned ? null : comentario.texto,
-    is_banned: comentario.is_banned,
-    aprobado: comentario.aprobado,
-    bajo_moderacion: !comentario.aprobado && !comentario.is_banned,
+    texto: comentario.status === COMMENT_STATUS.BANEADO ? null : comentario.texto,
+    status: comentario.status,
+    banned_at: comentario.banned_at,
     created_at: comentario.created_at,
     puntuacion: votosPositivos - votosNegativos,
     votosPositivos,

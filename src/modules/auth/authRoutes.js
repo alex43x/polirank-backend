@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as authController from './authController.js';
 import authMiddleware from '../../shared/middlewares/auth.js';
-import { authLimiter, requestAccessLimiter } from '../../shared/middlewares/rateLimiter.js';
+import { authLimiter, requestAccessLimiter, resetPasswordLimiter } from '../../shared/middlewares/rateLimiter.js';
 import {
   loginRules,
   requestAccessRules,
@@ -200,7 +200,7 @@ router.get('/verify-token', authLimiter, verifyTokenRules, validate, authControl
  *       404:
  *         description: Alumno no encontrado
  */
-router.post('/reset-password', authLimiter, resetPasswordRules, validate, authController.resetPassword);
+router.post('/reset-password', resetPasswordLimiter, resetPasswordRules, validate, authController.resetPassword);
 
 /**
  * @openapi

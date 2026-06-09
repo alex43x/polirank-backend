@@ -1,5 +1,8 @@
+import { Op } from 'sequelize';
 import Section from '../../models/sectionModel.js';
 import Curso from '../../models/courseModel.js';
+import ReviewCab from '../../models/reviewCab.js';
+import Aspecto from '../../models/aspectModel.js';
 import { NotFoundError } from '../../shared/errors/httpErrors.js';
 import { ErrorCodes } from '../../shared/errors/errorCodes.js';
 import {
@@ -88,4 +91,33 @@ export async function getCoursesBySection(sectionId) {
       ['periodo', 'DESC'],
     ],
   });
+}
+
+export async function getReviewsBySection(sectionId) {
+  const section = await Section.findByPk(sectionId);
+  if (!section) throw new NotFoundError(ErrorCodes.SECTION_NOT_FOUND.code, 'Sección no encontrada');
+
+  const cursos = await Curso.findAll({ where: { seccion: sectionId }, attributes: ['id'] });
+  const cursosIds = cursos.map((c) => c.id);
+
+  if (cursosIds.length === 0) return [];
+
+  const reviews = await ReviewCab.findAll({
+    where: { curso: { [Op.in]: cursosIds } },
+    include: [
+      { association: 'contenidos', include: [{ model: Aspecto, as: 'Aspecto' }] },
+      { association: 'Alumno' },
+      { association: 'Comentario', include: [{ association: 'votos' }] },
+      {
+        association: 'Curso',
+        include: [{
+          association: 'Seccion',
+          include: [{ association: 'Docente' }, { association: 'Materia' }],
+        }],
+      },
+    ],
+    order: [['fecha', 'DESC']],
+  });
+
+  return reviews;
 }
