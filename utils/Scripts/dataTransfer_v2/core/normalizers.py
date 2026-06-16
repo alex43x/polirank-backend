@@ -74,6 +74,21 @@ EQUIVALENCIAS_ASIGNATURAS = {
     "Organización, Sistemas y Métodos": "Técnicas de Organización y Métodos", #isp
     "Administración III": "Técnicas de Organización y Métodos",             #lcik
     "Costos e Ingeniería Económica": "Ingeniería Económica",                #ien
+    "Estadística I": "Probabilidad y Estadística",                           #imk
+    "Probabilidades y Estadística": "Probabilidad y Estadística",           #iin
+}
+
+# Equivalencias con contexto de carrera: (nombre_normalizado_sin_acentos, SIGLA_CARRERA) → nombre_canónico
+# Usar cuando el mismo nombre en Excel representa contenidos distintos según la carrera.
+EQUIVALENCIAS_POR_CARRERA: dict[tuple[str, str], str] = {
+    # "Estadística" en IEK comparte contenido con Materia 1 (Probabilidad y Estadística general)
+    ("estadistica", "IEK"): "Probabilidad y Estadística",
+    # "Estadística" en LGH y LCI es un contenido diferente (Materia 2 - Licenciaturas)
+    ("estadistica", "LGH"): "Estadistica LGH LCI",
+    ("estadistica", "LCI"): "Estadistica LGH LCI",
+    # "Emprendedorismo" en IEL e IEN es Materia 4 → mismo contenido que "Plan de Negocios"
+    ("emprendedorismo", "IEL"): "Plan de Negocios",
+    ("emprendedorismo", "IEN"): "Plan de Negocios",
 }
 
 
@@ -94,8 +109,10 @@ def normalizar_titulo_asignatura(titulo: str) -> str:
     
     # Mapear equivalencias/sinónimos usando el texto normalizado (minúsculas, sin tildes)
     titulo_norm = normalizar_texto(titulo)
-    if titulo_norm in EQUIVALENCIAS_ASIGNATURAS:
-        titulo = EQUIVALENCIAS_ASIGNATURAS[titulo_norm]
+    for clave_original, valor_canonico in EQUIVALENCIAS_ASIGNATURAS.items():
+        if normalizar_texto(clave_original) == titulo_norm:
+            titulo = valor_canonico
+            break
 
     # 2. Corregir typos (insensible a mayúsculas usando replace)
     for typo, correcto in TYPO_MAP.items():
@@ -118,6 +135,21 @@ def normalizar_titulo_asignatura(titulo: str) -> str:
     titulo = re.sub(r'\b([IVX]+)-', r'\1 - ', titulo)
     
     return titulo.strip()
+
+def normalizar_titulo_con_carrera(titulo: str, carrera_sigla: str) -> str:
+    """Como normalizar_titulo_asignatura pero con contexto de carrera.
+
+    Primero revisa si existe una equivalencia específica para (titulo, carrera_sigla)
+    en EQUIVALENCIAS_POR_CARRERA. Si no hay entrada, delega al flujo normal.
+    Usar en asignatura_service, malla_service y seccion_service.
+    """
+    clave = (normalizar_texto(titulo), carrera_sigla.strip().upper())
+    if clave in EQUIVALENCIAS_POR_CARRERA:
+        # Retornar directamente el nombre canónico sin pasar por normalizar_titulo_asignatura,
+        # ya que esa función elimina texto entre paréntesis y los nombres canónicos
+        # del dict contextual pueden contenerlos (ej. "Estadística (LGH, LCI)").
+        return EQUIVALENCIAS_POR_CARRERA[clave].strip()
+    return normalizar_titulo_asignatura(titulo)
 
 def es_duplicado_fuzzy(nombre_a: str, nombre_b: str, umbral: int = 92) -> bool:
     """Fuzzy matching estricto para detección de docentes duplicados."""

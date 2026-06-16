@@ -1,7 +1,7 @@
 import pandas as pd
 from core.models import Malla
 from core.interfaces import IMallaRepository
-from core.normalizers import normalizar_titulo_asignatura
+from core.normalizers import normalizar_titulo_con_carrera
 
 class MallaService:
     def __init__(self, repo: IMallaRepository):
@@ -33,7 +33,7 @@ class MallaService:
                 stats["omitidos_carrera_inv"] += 1
                 continue
                 
-            asig_norm = normalizar_titulo_asignatura(asig_raw).lower()
+            asig_norm = normalizar_titulo_con_carrera(asig_raw, carrera_raw).lower()
             
             if asig_norm not in mapa_asignaturas:
                 stats["omitidos_asig_inv"] += 1
