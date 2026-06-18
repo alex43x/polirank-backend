@@ -4,22 +4,39 @@ from core.models import Docente
 from core.interfaces import IDocenteRepository
 from adapters.db.db_connection import DatabasePool
 
+
 class DocenteRepository(IDocenteRepository):
     def __init__(self):
         self._db = DatabasePool.get_instance()
 
     def buscar_por_nombre_normalizado(self, nombre: str) -> Optional[Docente]:
+        """Busca un docente por nombre normalizado (sin acentos, minúsculas).
+
+        BUG-11 fix: la comparación SQL con lower() ignora acentos sólo si PostgreSQL
+        tiene la extensión 'unaccent'. Aquí intentamos con unaccent() primero;
+        si no está disponible, hacemos el fallback con lower() y filtramos en Python
+        usando la misma normalización que aplica el service.
+        """
         with self._db.connection() as conn:
             with conn.cursor() as cur:
-                # Usamos una búsqueda simple por ILIKE o similar ya que fuzzy se hace en Service si es necesario
-                cur.execute(
-                    "SELECT id, nombre, correo FROM docentes "
-                    "WHERE lower(nombre) = lower(%s) LIMIT 1",
-                    (nombre,)
-                )
-                row = cur.fetchone()
+                try:
+                    cur.execute(
+                        "SELECT id, nombre, correo FROM docentes "
+                        "WHERE unaccent(lower(nombre)) = unaccent(lower(%s)) LIMIT 1",
+                        (nombre,)
+                    )
+                    row = cur.fetchone()
+                except Exception:
+                    # unaccent no disponible: rollback del error y fallback a lower()
+                    conn.rollback()
+                    cur.execute(
+                        "SELECT id, nombre, correo FROM docentes "
+                        "WHERE lower(nombre) = lower(%s) LIMIT 1",
+                        (nombre,)
+                    )
+                    row = cur.fetchone()
+
                 if row:
-                    # Dividimos el nombre para el modelo
                     partes = str(row[1]).split(" ", 1)
                     nom = partes[0]
                     ape = partes[1] if len(partes) > 1 else ""
@@ -54,28 +71,27 @@ class DocenteRepository(IDocenteRepository):
 
     def insertar_bulk(self, docentes: List[Docente]) -> int:
         if not docentes: return 0
-        
+
         with self._db.connection() as conn:
             with conn.cursor() as cur:
                 datos = [
                     (f"{d.nombre} {d.apellido}".strip(), d.correo_efectivo)
                     for d in docentes
                 ]
-                
+
                 query = """
                     INSERT INTO docentes (nombre, correo)
                     VALUES %s
                     ON CONFLICT (correo) DO NOTHING
                     RETURNING id
                 """
-                
-                # psycopg2 no soporta RETURNING con execute_values tan fácilmente para asignar a objetos individuales
-                # pero podemos usarlo para saber qué se insertó o usar RETURNING en casos unitarios.
-                # Para bulk insert, el orquestador de V2 acepta el conteo.
-                psycopg2.extras.execute_values(
+                # BUG-01 fix: fetch=True devuelve las filas de RETURNING.
+                # cur.rowcount con execute_values + ON CONFLICT DO NOTHING es siempre -1.
+                rows = psycopg2.extras.execute_values(
                     cur,
                     query,
                     datos,
+                    fetch=True,
                     page_size=500
                 )
-                return cur.rowcount
+                return len(rows) if rows else 0

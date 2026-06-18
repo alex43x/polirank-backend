@@ -4,6 +4,7 @@ from core.models import Seccion
 from core.interfaces import ISeccionRepository
 from adapters.db.db_connection import DatabasePool
 
+
 class SeccionRepository(ISeccionRepository):
     def __init__(self):
         self._db = DatabasePool.get_instance()
@@ -27,24 +28,31 @@ class SeccionRepository(ISeccionRepository):
 
     def insertar_bulk_and_return_ids(self, secciones: List[Seccion]) -> Dict[Tuple[int, int], int]:
         if not secciones: return {}
-        
+
         datos = [(s.docente_id, s.asignatura_id) for s in secciones]
-        
+
         with self._db.connection() as conn:
             with conn.cursor() as cur:
+                # BUG-03 fix: ON CONFLICT DO NOTHING + RETURNING sólo devuelve las filas
+                # NUEVAS. Las secciones ya existentes no se retornan y sus cursos nunca
+                # se crearían en una segunda importación.
+                #
+                # Solución: ON CONFLICT DO UPDATE con un no-op (SET docente = EXCLUDED.docente)
+                # fuerza que PostgreSQL siempre ejecute RETURNING, tanto para inserts nuevos
+                # como para filas que ya existían.
                 query = """
                     INSERT INTO secciones (docente, asignatura)
                     VALUES %s
-                    ON CONFLICT (docente, asignatura) DO NOTHING
+                    ON CONFLICT (docente, asignatura) DO UPDATE
+                        SET docente = EXCLUDED.docente
                     RETURNING id, docente, asignatura
                 """
-                insertados = psycopg2.extras.execute_values(
+                rows = psycopg2.extras.execute_values(
                     cur,
                     query,
                     datos,
+                    fetch=True,
                     page_size=500,
-                    fetch=True
                 )
-                # Map (doc, asig) -> id
-                resultado = {(r[1], r[2]): r[0] for r in insertados} if insertados else {}
-                return resultado
+                # Map (doc_id, asig_id) -> seccion_id para todas las secciones (nuevas + existentes)
+                return {(r[1], r[2]): r[0] for r in rows} if rows else {}

@@ -4,6 +4,7 @@ from core.models import Curso
 from core.interfaces import ICursoRepository
 from adapters.db.db_connection import DatabasePool
 
+
 class CursoRepository(ICursoRepository):
     def __init__(self):
         self._db = DatabasePool.get_instance()
@@ -20,20 +21,24 @@ class CursoRepository(ICursoRepository):
 
     def insertar_bulk(self, cursos: List[Curso]) -> int:
         if not cursos: return 0
-        
+
         datos = [(c.seccion_id, c.anio, c.periodo) for c in cursos]
-        
+
         with self._db.connection() as conn:
             with conn.cursor() as cur:
                 query = """
                     INSERT INTO cursos (seccion, year, periodo)
                     VALUES %s
                     ON CONFLICT (seccion, year, periodo) DO NOTHING
+                    RETURNING id
                 """
-                psycopg2.extras.execute_values(
+                # BUG-01 fix: fetch=True devuelve filas RETURNING; len(rows) es el conteo real.
+                # cur.rowcount con execute_values + ON CONFLICT DO NOTHING siempre es -1.
+                rows = psycopg2.extras.execute_values(
                     cur,
                     query,
                     datos,
+                    fetch=True,
                     page_size=500
                 )
-                return cur.rowcount
+                return len(rows) if rows else 0

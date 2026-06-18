@@ -9,6 +9,12 @@ env_path = os.path.join(root_dir, '.env')
 
 if os.path.exists(env_path):
     load_dotenv(env_path)
+else:
+    # SMELL-04 fix: advertir explícitamente en lugar de continuar en silencio
+    # con credenciales por defecto que podrían apuntar a la BD equivocada.
+    print(f"⚠️  ADVERTENCIA: No se encontró el archivo .env en '{env_path}'.")
+    print("   Se usarán los valores por defecto (host=localhost, user=postgres).")
+    print("   Asegúrate de que el .env esté en la raíz de polirank-backend.\n")
 
 
 DB_CONFIG = {

@@ -1,8 +1,9 @@
 import psycopg2.extras
-from typing import Optional, List, Tuple
+from typing import Optional, List
 from core.models import Asignatura
 from core.interfaces import IAsignaturaRepository
 from adapters.db.db_connection import DatabasePool
+
 
 class AsignaturaRepository(IAsignaturaRepository):
     def __init__(self):
@@ -23,6 +24,7 @@ class AsignaturaRepository(IAsignaturaRepository):
                 return None
 
     def obtener_departamentos(self) -> dict[str, int]:
+        """Retorna {sigla_upper: id}. Abre su propia conexión (uso externo en validación)."""
         with self._db.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT siglas, id FROM departamentos")
@@ -30,28 +32,39 @@ class AsignaturaRepository(IAsignaturaRepository):
 
     def insertar_bulk(self, asignaturas: List[Asignatura]) -> int:
         if not asignaturas: return 0
-        
-        deptos = self.obtener_departamentos()
-        
-        datos_insert = []
-        for asig in asignaturas:
-            id_dept = deptos.get(asig.departamento.strip().upper()) if asig.departamento else asig.depto_id
-            if id_dept:
-                datos_insert.append((asig.titulo, id_dept))
-        
-        if not datos_insert: return 0
 
+        # BUG-10 fix: departamentos e INSERT dentro de la misma conexión/transacción.
+        # Así se evita el riesgo de leer datos stale y se reduce el uso del pool a 1 conexión.
         with self._db.connection() as conn:
             with conn.cursor() as cur:
+                cur.execute("SELECT siglas, id FROM departamentos")
+                deptos = {row[0].strip().upper(): row[1] for row in cur.fetchall() if row[0]}
+
+                datos_insert = []
+                for asig in asignaturas:
+                    id_dept = (
+                        deptos.get(asig.departamento.strip().upper())
+                        if asig.departamento
+                        else asig.depto_id
+                    )
+                    if id_dept:
+                        datos_insert.append((asig.titulo, id_dept))
+
+                if not datos_insert: return 0
+
                 query = """
                     INSERT INTO asignaturas (nombre, depto)
                     VALUES %s
                     ON CONFLICT (nombre, depto) DO NOTHING
+                    RETURNING id
                 """
-                psycopg2.extras.execute_values(
+                # BUG-01 fix: execute_values con fetch=True devuelve las filas RETURNING.
+                # cur.rowcount siempre sería -1 con execute_values + ON CONFLICT DO NOTHING.
+                rows = psycopg2.extras.execute_values(
                     cur,
                     query,
                     datos_insert,
+                    fetch=True,
                     page_size=500
                 )
-                return cur.rowcount
+                return len(rows) if rows else 0
