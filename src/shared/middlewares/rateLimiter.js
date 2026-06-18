@@ -1,8 +1,8 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 export const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 200,
 });
 
 export const authLimiter = rateLimit({
@@ -14,6 +14,6 @@ export const authLimiter = rateLimit({
 export const requestAccessLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  keyGenerator: (req) => req.body.correo?.toLowerCase() || req.ip,
+  keyGenerator: (req) => req.body.correo?.toLowerCase() || ipKeyGenerator(req),
   message: { message: 'Too many attempts, please try again later.' },
 });

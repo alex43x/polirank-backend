@@ -11,6 +11,7 @@ export const permissionsMap = Object.freeze({
     'career:bypass_enrollment',
   ],
   STUDENT: [
+    'course:read',
     'subject:read',
     'teacher:read',
     'section:read',
@@ -19,6 +20,7 @@ export const permissionsMap = Object.freeze({
     'profile:read',
   ],
   GUEST: [
+    'course:read',
     'subject:read',
     'teacher:read',
     'section:read',

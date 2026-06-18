@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as authController from './authController.js';
 import authMiddleware from '../../shared/middlewares/auth.js';
-import { requestAccessLimiter } from '../../shared/middlewares/rateLimiter.js';
+import { authLimiter, requestAccessLimiter } from '../../shared/middlewares/rateLimiter.js';
 import {
   loginRules,
   requestAccessRules,
@@ -43,7 +43,7 @@ const router = Router();
  *       401:
  *         description: Credenciales inválidas
  */
-router.post('/login', loginRules, validate, authController.login);
+router.post('/login', authLimiter, loginRules, validate, authController.login);
 
 /**
  * @openapi
@@ -117,7 +117,7 @@ router.post('/request-access', requestAccessLimiter, requestAccessRules, validat
  *       400:
  *         description: Token inválido o expirado
  */
-router.get('/verify-token', verifyTokenRules, validate, authController.verifyToken);
+router.get('/verify-token', authLimiter, verifyTokenRules, validate, authController.verifyToken);
 
 /**
  * @openapi
@@ -200,7 +200,7 @@ router.get('/verify-token', verifyTokenRules, validate, authController.verifyTok
  *       404:
  *         description: Alumno no encontrado
  */
-router.post('/reset-password', resetPasswordRules, validate, authController.resetPassword);
+router.post('/reset-password', authLimiter, resetPasswordRules, validate, authController.resetPassword);
 
 /**
  * @openapi
@@ -292,7 +292,7 @@ router.post('/reset-password', resetPasswordRules, validate, authController.rese
  *       409:
  *         description: Ya existe una cuenta con ese correo
  */
-router.post('/register', registerRules, validate, authController.register);
+router.post('/register', authLimiter, registerRules, validate, authController.register);
 
 /**
  * @openapi

@@ -14,6 +14,9 @@ import ReviewCont from "./reviewCont.js";
 import Departamento from "./departmentModel.js";
 import Estadistica from "./statsModel.js";
 import Matriculacion from "./enrollmentModel.js";
+import Comentario from "./commentModel.js";
+import VotoComentario from "./commentVoteModel.js";
+import ReporteComentario from "./reportModel.js";
 
 // Alumno - Rol
 Alumno.belongsTo(Rol, { foreignKey: 'rol', as: 'Rol' });
@@ -83,4 +86,28 @@ Curso.hasMany(Estadistica, { foreignKey: 'curso', as: 'estadisticas' });
 Estadistica.belongsTo(Aspecto, { foreignKey: 'aspecto', as: 'Aspecto' });
 Aspecto.hasMany(Estadistica, { foreignKey: 'aspecto', as: 'estadisticas' });
 
-export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, Estadistica, Matriculacion, sequelize };
+// Comentario - ReviewCab
+Comentario.belongsTo(ReviewCab, { foreignKey: 'revcab', as: 'ReviewCab' });
+ReviewCab.hasOne(Comentario, { foreignKey: 'revcab', as: 'Comentario' });
+
+// VotoComentario - Comentario
+VotoComentario.belongsTo(Comentario, { foreignKey: 'comentario', as: 'Comentario' });
+Comentario.hasMany(VotoComentario, { foreignKey: 'comentario', as: 'votos' });
+
+// VotoComentario - Alumno
+VotoComentario.belongsTo(Alumno, { foreignKey: 'alumno', as: 'Alumno' });
+Alumno.hasMany(VotoComentario, { foreignKey: 'alumno', as: 'votosComentarios' });
+
+// ReporteComentario - Comentario
+ReporteComentario.belongsTo(Comentario, { foreignKey: 'comentario_id', as: 'Comentario' });
+Comentario.hasMany(ReporteComentario, { foreignKey: 'comentario_id', as: 'reportes' });
+
+// ReporteComentario - Reporter (Alumno)
+ReporteComentario.belongsTo(Alumno, { foreignKey: 'reporter_id', as: 'Reporter' });
+Alumno.hasMany(ReporteComentario, { foreignKey: 'reporter_id', as: 'reportes' });
+
+// ReporteComentario - Reviewer (Alumno)
+ReporteComentario.belongsTo(Alumno, { foreignKey: 'reviewed_by', as: 'Reviewer' });
+Alumno.hasMany(ReporteComentario, { foreignKey: 'reviewed_by', as: 'revisiones' });
+
+export { Alumno, Rol, Carrera, Aspecto, Intento, Docente, Seccion, Curso, Malla, Estadistica, Matriculacion, Comentario, VotoComentario, ReporteComentario, sequelize };
