@@ -2,7 +2,7 @@ import pandas as pd
 from core.models import Seccion, Curso, ValidationReport
 from core.interfaces import ISeccionRepository, IDocenteRepository, IAsignaturaRepository
 from core.normalizers import (
-    normalizar_titulo_asignatura,
+    normalizar_titulo_con_carrera,
     normalizar_texto, 
     generar_correo_generico
 )
@@ -29,7 +29,8 @@ class SeccionService:
             if not titulo_raw or titulo_raw.lower() in ("nan", ""):
                 continue
                 
-            titulo_norm = normalizar_titulo_asignatura(titulo_raw)
+            carrera_sigla = str(row.get("_hoja_origen", "")).strip().upper()
+            titulo_norm = normalizar_titulo_con_carrera(titulo_raw, carrera_sigla)
             asig_tuple = self._asig_repo.buscar_por_titulo_normalizado(titulo_norm)
             
             if not asig_tuple:

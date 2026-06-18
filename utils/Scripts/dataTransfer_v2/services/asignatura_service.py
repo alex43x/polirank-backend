@@ -1,7 +1,7 @@
 import pandas as pd
 from core.models import Asignatura, ValidationReport
 from core.interfaces import IAsignaturaRepository
-from core.normalizers import normalizar_titulo_asignatura
+from core.normalizers import normalizar_titulo_asignatura, normalizar_titulo_con_carrera
 
 class AsignaturaService:
     def __init__(self, repo: IAsignaturaRepository):
@@ -23,7 +23,9 @@ class AsignaturaService:
             if depto and depto not in deptos_bd:
                 report.errores.append(f"Fila {idx+2}: Departamento desconocido '{depto}'")
             
-            titulo_norm = normalizar_titulo_asignatura(titulo)
+            titulo_norm = normalizar_titulo_con_carrera(
+                titulo, str(row.get("_hoja_origen", "")).strip().upper()
+            )
             if titulo_norm in titulos_procesados:
                 report.advertencias.append(f"Fila {idx+2}: Asignatura duplicada '{titulo_norm}'")
             titulos_procesados.add(titulo_norm)
@@ -52,7 +54,9 @@ class AsignaturaService:
                 stats["omitidas_dpto_invalido"] += 1
                 continue
                 
-            titulo_norm = normalizar_titulo_asignatura(titulo)
+            titulo_norm = normalizar_titulo_con_carrera(
+                titulo, str(row.get("_hoja_origen", "")).strip().upper()
+            )
             clave = (titulo_norm, depto)
             
             if clave not in asignaturas_unicas:
