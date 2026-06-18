@@ -23,6 +23,12 @@ const Seccion = sequelize.define(
   {
     tableName: "secciones",
     timestamps: false,
+    indexes: [
+      {
+        unique: true,
+        fields: ["docente", "asignatura"],
+      },
+    ],
   }
 );
 

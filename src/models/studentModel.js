@@ -13,6 +13,7 @@ const Alumno = sequelize.define(
     correo: {
       type: DataTypes.TEXT,
       allowNull: false,
+      unique: true,
     },
     nombre: {
       type: DataTypes.TEXT,

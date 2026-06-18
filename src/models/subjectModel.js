@@ -22,6 +22,12 @@ const Materia = sequelize.define(
   {
     tableName: "asignaturas",
     timestamps: false,
+    indexes: [
+      {
+        unique: true,
+        fields: ["nombre", "depto"],
+      },
+    ],
   }
 );
 

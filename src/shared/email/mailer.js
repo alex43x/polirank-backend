@@ -9,9 +9,13 @@ const transport = nodemailer.createTransport({
 });
 
 if (env.nodeEnv !== 'production') {
-  transport.verify()
-    .then(() => console.log('\u2705 SMTP Brevo conectado correctamente'))
-    .catch((err) => console.error('\u274c Error conectando a SMTP:', err));
+  if (env.smtp.user && env.smtp.pass) {
+    transport.verify()
+      .then(() => console.log('\u2705 SMTP Brevo conectado correctamente'))
+      .catch((err) => console.error('\u274c Error conectando a SMTP:', err));
+  } else {
+    console.log('⚠️ SMTP no configurado en .env (faltan credenciales). No se enviarán correos.');
+  }
 }
 
 const from = `${env.smtp.fromName} <${env.smtp.fromAddress}>`;

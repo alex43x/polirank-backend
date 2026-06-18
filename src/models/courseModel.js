@@ -27,6 +27,12 @@ const Curso = sequelize.define(
   {
     tableName: "cursos",
     timestamps: false,
+    indexes: [
+      {
+        unique: true,
+        fields: ["seccion", "year", "periodo"],
+      },
+    ],
   }
 );
 
