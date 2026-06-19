@@ -81,6 +81,7 @@ EQUIVALENCIAS_ASIGNATURAS = {
     "Costos e Ingeniería Económica": "Ingeniería Económica",                #ien
     "Estadística I": "Probabilidad y Estadística",                          #imk
     "Probabilidades y Estadística": "Probabilidad y Estadística",           #iin
+    "Desarrollo del Emprendedorismo": "Emprendedorismo",                    #iek,lgh → mismo contenido que emprendedorismo materia 3
 }
 
 # Equivalencias con contexto de carrera: (nombre_normalizado_sin_acentos, SIGLA_CARRERA) → nombre_canónico
