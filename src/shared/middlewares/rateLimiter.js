@@ -1,8 +1,8 @@
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 export const globalLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 300,
+  windowMs: 30 * 60 * 1000,
+  max: 500,
   keyGenerator: (req) => {
     const auth = req.headers.authorization;
     if (auth) {
