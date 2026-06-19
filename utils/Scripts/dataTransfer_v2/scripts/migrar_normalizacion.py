@@ -614,10 +614,13 @@ def fase2_equivalencias_por_carrera(cur, dry_run: bool):
             targets.setdefault(canon, []).append(sigla)
         target_items = list(targets.items())
 
-        # ── Single target: original path ──────────────────────────────
+        # ── Single target: filtrar mallas por carrera igual que multi-target ──
         if len(target_items) == 1:
-            for sigla, canon in entries:
-                contexto = f"carrera={sigla}"
+            canon, siglas_all = target_items[0]  # solo 1 canónico, múltiples siglas posibles
+            first = True
+
+            for sigla, _ in entries:
+                ctx = f"carrera={sigla}"
                 resultados = buscar_por_carrera(cur, titulo_norm, sigla)
 
                 if not resultados:
@@ -635,21 +638,74 @@ def fase2_equivalencias_por_carrera(cur, dry_run: bool):
                         stats.sin_cambios += 1
                         continue
 
-                    id_canonico = buscar_canonico_en_depto(cur, canon, depto_id, id_viejo)
+                    # Resolver carrera ids para filtrar mallas
+                    carrera_ids = _siglas_a_carrera_ids(cur, [sigla])
+
+                    # Asegurar que el canónico existe (crear si no)
+                    id_canonico = _obtener_o_crear_asignatura(cur, canon, depto_id, id_viejo, dry_run)
 
                     if id_canonico is None:
-                        log.info("%s[RENAME] '%s' (id=%d, depto=%d) -> '%s' [%s]",
-                                 prefix, nombre_actual, id_viejo, depto_id, canon, sigla)
-                        if not dry_run:
+                        # dry-run y no existe aún
+                        log.info("%s  [DRY-RUN] Se crearia '%s' en depto=%d [%s]",
+                                 prefix, canon, depto_id, ctx)
+                        if carrera_ids:
+                            placeholders = ', '.join(['%s'] * len(carrera_ids))
                             cur.execute(
-                                "UPDATE asignaturas SET nombre = %s WHERE id = %s",
-                                (canon, id_viejo),
+                                f"SELECT COUNT(*) FROM malla WHERE asignatura = %s AND carrera IN ({placeholders})",
+                                (id_viejo, *carrera_ids),
                             )
-                            _invalidar_cache()
-                        stats.renombradas += 1
-                    else:
-                        _aplicar_merge(cur, id_viejo, nombre_actual, id_canonico,
-                                       canon, depto_id, dry_run, contexto)
+                            n_est = cur.fetchone()[0]
+                            if n_est:
+                                log.info("%s  [DRY-RUN]   -> %d mallas serian repointadas [%s]",
+                                         prefix, n_est, ctx)
+                        first = False
+                        continue
+
+                    # Repoint mallas SOLO para esta carrera
+                    n_mal = repoint_malla_por_carreras(cur, id_viejo, id_canonico, carrera_ids, dry_run)
+                    stats.mallas_repointadas += n_mal
+                    if n_mal:
+                        log.info("%s  -> %d mallas repointadas a '%s' (id=%d) [%s]",
+                                 prefix, n_mal, canon, id_canonico, ctx)
+
+                    # Secciones e intentos: solo en el primer paso (son globales)
+                    if first:
+                        n_sec = repoint_secciones(cur, id_viejo, id_canonico, dry_run)
+                        n_int = repoint_intentos(cur, id_viejo, id_canonico, dry_run)
+                        stats.secciones_repointadas += n_sec
+                        stats.intentos_repointados += n_int
+                        if n_sec or n_int:
+                            log.info("%s  -> %d secciones, %d intentos repointados [%s]",
+                                     prefix, n_sec, n_int, ctx)
+
+                        # Cleanup duplicados si quedan secciones sin repointear
+                        if not dry_run:
+                            refs_sec = contar_refs(cur, "secciones", "asignatura", id_viejo)
+                            if refs_sec > 0:
+                                log.warning(
+                                    "  Quedan %d secciones no repointadas en id=%d. "
+                                    "Intentando cleanup de duplicados...", refs_sec, id_viejo
+                                )
+                                limpiar_secciones_duplicadas(cur, id_viejo, id_canonico)
+                                n_retry = repoint_secciones(cur, id_viejo, id_canonico, dry_run)
+                                stats.secciones_repointadas += n_retry
+                                if n_retry:
+                                    log.info("  -> %d secciones adicionales repointadas tras cleanup.", n_retry)
+
+                        first = False
+
+                    stats.mergeadas += 1
+
+                # Eliminar asignatura vieja si no quedan referencias
+                if not dry_run and 'id_viejo' in dir():
+                    refs_final = (contar_refs(cur, "secciones", "asignatura", id_viejo) +
+                                  contar_refs(cur, "malla", "asignatura", id_viejo) +
+                                  contar_refs(cur, "intentos", "asignatura", id_viejo))
+                    if refs_final == 0:
+                        cur.execute("DELETE FROM asignaturas WHERE id = %s", (id_viejo,))
+                        _invalidar_cache()
+                        log.info("%s  [DELETE] asignatura id=%d eliminada (single-target).", prefix, id_viejo)
+
             continue
 
         # ── Multiple distinct targets: split mallas per carrera ──────
