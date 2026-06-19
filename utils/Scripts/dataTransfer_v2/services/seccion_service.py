@@ -31,6 +31,7 @@ class SeccionService:
         }
 
         secciones_a_crear = []  # List[Seccion]
+        vistos = set()  # evitar (docente, asignatura) duplicados en ON CONFLICT
 
         for _, row in df.iterrows():
             titulo_raw = str(row.get("asignatura", "")).strip()
@@ -78,7 +79,10 @@ class SeccionService:
 
             doc_id = docente.id
             if doc_id:
-                secciones_a_crear.append(Seccion(docente_id=doc_id, asignatura_id=asig_id))
+                key = (doc_id, asig_id)
+                if key not in vistos:
+                    vistos.add(key)
+                    secciones_a_crear.append(Seccion(docente_id=doc_id, asignatura_id=asig_id))
 
         if secciones_a_crear:
             # BUG-03 fix (en seccion_repository): insertar_bulk_and_return_ids ahora devuelve
