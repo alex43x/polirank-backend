@@ -29,6 +29,10 @@ const Alumno = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    last_login: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "alumnos",

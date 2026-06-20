@@ -2,6 +2,7 @@ export const toUserDto = (student) => ({
   id: student.id,
   nombre: student.nombre,
   correo: student.correo,
+  last_login: student.last_login ?? null,
   rol: student.Rol ? { id: student.Rol.id, nombre: student.Rol.nombre } : null,
   matriculaciones: (student.matriculaciones ?? []).map((m) => ({
     id: m.id,
