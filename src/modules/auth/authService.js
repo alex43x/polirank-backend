@@ -55,6 +55,8 @@ export async function login(correo, password) {
     throw new UnauthorizedError(ErrorCodes.AUTH_INVALID_CREDENTIALS.code, 'Credenciales inválidas');
   }
 
+  await loginUser.update({ last_login: new Date() });
+
   const student = await Alumno.findByPk(loginUser.id, { include: withStudentAssociations() });
 
   const token = signAuthToken(student);
